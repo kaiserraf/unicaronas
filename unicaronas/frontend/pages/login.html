@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniCaronas — Entrar</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* Painel esquerdo — visual */
+    .login-visual {
+      background: var(--bg-2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 4rem;
+      position: relative; overflow: hidden;
+    }
+    .login-visual::before {
+      content: '';
+      position: absolute; top: -120px; left: -120px;
+      width: 420px; height: 420px; border-radius: 50%;
+      background: var(--accent-glow);
+      filter: blur(80px);
+    }
+    .login-visual::after {
+      content: '';
+      position: absolute; bottom: -80px; right: -80px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: rgba(34,211,160,.08);
+      filter: blur(60px);
+    }
+    .visual-content { position: relative; z-index: 1; }
+    .visual-logo {
+      font-size: 1.5rem; font-weight: 700;
+      letter-spacing: -.5px; margin-bottom: 3rem;
+    }
+    .visual-logo span { color: var(--accent-2); }
+    .visual-headline {
+      font-size: 2.4rem; font-weight: 700;
+      line-height: 1.2; letter-spacing: -.8px;
+      margin-bottom: 1.2rem;
+    }
+    .visual-headline em { font-style: normal; color: var(--accent-2); }
+    .visual-desc { color: var(--text-2); font-size: .95rem; max-width: 340px; line-height: 1.7; }
+    .visual-stats {
+      display: flex; gap: 2.5rem; margin-top: 3rem;
+    }
+    .visual-stat .num { font-size: 1.6rem; font-weight: 700; color: var(--text); }
+    .visual-stat .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); font-weight: 600; }
+
+    /* Painel direito — form */
+    .login-form-panel {
+      display: flex; align-items: center; justify-content: center;
+      padding: 3rem 2rem; background: var(--bg);
+    }
+    .login-box { width: 100%; max-width: 380px; }
+    .login-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.4px; margin-bottom: .4rem; }
+    .login-subtitle { color: var(--text-3); font-size: .88rem; margin-bottom: 2rem; }
+
+    @media(max-width:768px){
+      body { grid-template-columns: 1fr; }
+      .login-visual { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Visual -->
+  <div class="login-visual">
+    <div class="visual-content fade-up">
+      <div class="visual-logo">Uni<span>Caronas</span></div>
+      <h1 class="visual-headline">Caronas para<br>quem faz parte<br>da <em>sua universidade</em></h1>
+      <p class="visual-desc">Conecte-se com colegas que fazem o mesmo trajeto. Divida custos, reduza o trânsito e chegue com segurança.</p>
+      <div class="visual-stats">
+        <div class="visual-stat">
+          <div class="num">100%</div>
+          <div class="lbl">Estudantes verificados</div>
+        </div>
+        <div class="visual-stat">
+          <div class="num">Seguro</div>
+          <div class="lbl">Comunidade fechada</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="login-form-panel">
+    <div class="login-box fade-up">
+      <div class="login-title">Bem-vindo de volta</div>
+      <p class="login-subtitle">Acesse sua conta para continuar</p>
+
+      <div id="alert-container"></div>
+
+      <div class="form-group">
+        <label class="form-label">E-mail institucional</label>
+        <input class="form-control" type="email" id="email" placeholder="seu@universidade.edu.br" autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input class="form-control" type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn btn-primary btn-full mt-2" onclick="fazerLogin()" id="btn-login">
+        Entrar
+      </button>
+
+      <p class="text-center text-muted mt-2" style="font-size:.85rem">
+        Ainda não tem conta? <a href="cadastro.html">Criar conta</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    if (isLogado()) window.location.href = 'dashboard.html';
+
+    async function fazerLogin() {
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value;
+      const btn   = document.getElementById('btn-login');
+
+      if (!email || !senha) return showAlert('Preencha todos os campos', 'error');
+
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      try {
+        const res = await api.login({ email, senha });
+        setToken(res.data.token);
+        setUser(res.data.usuario);
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+  </script>
+</body>
+</html>

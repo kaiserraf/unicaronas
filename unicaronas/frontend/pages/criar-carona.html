@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniCaronas — Oferecer carona</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .page-content { max-width: 580px; margin: 0 auto; padding-bottom: 3rem; }
+    .calc-note {
+      font-size: .76rem; color: var(--text-3);
+      font-family: var(--font-mono);
+      margin-top: .3rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a class="navbar-brand" href="dashboard.html">Uni<span>Caronas</span></a>
+      <div class="navbar-links">
+        <a href="dashboard.html">Voltar</a>
+        <a href="#" onclick="logout()">Sair</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-content">
+      <div class="page-header fade-up">
+        <h2>Oferecer carona</h2>
+        <p>Publique sua carona e divida os custos do trajeto</p>
+      </div>
+
+      <div class="card fade-up">
+        <div id="alert-container"></div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Origem</label>
+            <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destino</label>
+            <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Data e horário</label>
+            <input class="form-control" id="horario" type="datetime-local">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vagas disponíveis</label>
+            <input class="form-control" id="vagas" type="number" min="1" max="6" value="3">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Distância estimada (km)</label>
+          <input class="form-control" id="distancia" type="number" min="0" step="0.5"
+            placeholder="Ex: 25" oninput="atualizarSugestao()">
+          <span class="calc-note">valor_sugerido = distância × R$ 0,30 / km</span>
+        </div>
+
+        <div class="price-suggestion" id="sugestao-box" style="display:none">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem">Valor sugerido pela plataforma</div>
+          <div class="suggested-value" id="sugestao-valor">R$ 0,00</div>
+          <p>Baseado na distância informada. Você pode alterar abaixo.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Valor cobrado por passageiro</label>
+          <input class="form-control" id="valor" type="number" min="0" step="0.50" placeholder="0,00">
+          <span class="form-hint">Você pode aceitar a sugestão ou definir outro valor</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <textarea class="form-control" id="observacoes" rows="2"
+            placeholder="Ponto de encontro, desvio aceito, bagagem..."></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <button class="btn btn-success btn-full" onclick="publicarCarona()" id="btn-pub">
+          Publicar carona
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    protegerRota();
+    const agora = new Date();
+    agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+    document.getElementById('horario').min = agora.toISOString().slice(0,16);
+
+    function atualizarSugestao() {
+      const dist = parseFloat(document.getElementById('distancia').value);
+      const box  = document.getElementById('sugestao-box');
+      if (!dist || dist <= 0) { box.style.display = 'none'; return; }
+      const sug = calcularValorSugerido(dist);
+      document.getElementById('sugestao-valor').textContent = formatarMoeda(sug);
+      box.style.display = 'block';
+      if (!document.getElementById('valor').value) {
+        document.getElementById('valor').value = sug.toFixed(2);
+      }
+    }
+
+    async function publicarCarona() {
+      const dados = {
+        origem:          document.getElementById('origem').value.trim(),
+        destino:         document.getElementById('destino').value.trim(),
+        horario_partida: document.getElementById('horario').value,
+        vagas_totais:    parseInt(document.getElementById('vagas').value),
+        valor_cobrado:   parseFloat(document.getElementById('valor').value),
+        distancia_km:    parseFloat(document.getElementById('distancia').value) || null,
+        observacoes:     document.getElementById('observacoes').value.trim(),
+      };
+
+      if (!dados.origem || !dados.destino || !dados.horario_partida || !dados.valor_cobrado) {
+        return showAlert('Preencha origem, destino, horário e valor', 'error');
+      }
+
+      const btn = document.getElementById('btn-pub');
+      btn.disabled = true; btn.textContent = 'Publicando...';
+
+      try {
+        const res = await api.criarCarona(dados);
+        showAlert('Carona publicada com sucesso!', 'success');
+        setTimeout(() => window.location.href = `carona.html?id=${res.data.id}`, 1500);
+      } catch(err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Publicar carona';
+      }
+    }
+  </script>
+</body>
+</html>

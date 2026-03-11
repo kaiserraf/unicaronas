@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniCaronas — Dashboard</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1.5rem 0; }
+    .actions-bar { display: flex; gap: .75rem; margin-bottom: 2rem; }
+    .section-label {
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--text-3); margin-bottom: 1rem;
+    }
+    #lista-caronas { display: flex; flex-direction: column; gap: 1rem; }
+    .accent-bar {
+      width: 32px; height: 3px; background: var(--accent);
+      border-radius: 99px; margin-bottom: .6rem;
+    }
+    @media(max-width:600px){ .stats-grid{grid-template-columns:1fr 1fr;} .actions-bar{flex-direction:column;} }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container">
+      <a class="navbar-brand" href="dashboard.html">Uni<span>Caronas</span></a>
+      <div class="navbar-links">
+        <a href="buscar.html">Buscar</a>
+        <a href="criar-carona.html">Oferecer carona</a>
+        <a href="perfil.html" id="nav-nome">Perfil</a>
+        <a href="#" onclick="logout()">Sair</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header fade-up">
+      <div class="accent-bar"></div>
+      <h2 id="boas-vindas">Carregando...</h2>
+      <p>Encontre ou ofereça uma carona para hoje</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card fade-up fade-up-1">
+        <div class="stat-num" id="stat-caronas">—</div>
+        <div class="stat-label">Caronas disponíveis</div>
+      </div>
+      <div class="stat-card fade-up fade-up-2">
+        <div class="stat-num" id="stat-minhas">—</div>
+        <div class="stat-label">Minhas caronas</div>
+      </div>
+      <div class="stat-card fade-up fade-up-3">
+        <div class="stat-num" id="stat-avaliacao">—</div>
+        <div class="stat-label">Minha avaliação</div>
+      </div>
+    </div>
+
+    <div class="actions-bar fade-up">
+      <a href="buscar.html"       class="btn btn-primary">Buscar carona</a>
+      <a href="criar-carona.html" class="btn btn-ghost">Oferecer carona</a>
+    </div>
+
+    <div class="section-label">Caronas disponíveis agora</div>
+    <div id="lista-caronas">
+      <p class="text-muted">Carregando...</p>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    protegerRota();
+    const usuario = getUser();
+
+    const hora = new Date().getHours();
+    const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+    document.getElementById('boas-vindas').textContent = `${saudacao}, ${usuario?.nome?.split(' ')[0]}`;
+    document.getElementById('nav-nome').textContent = usuario?.nome?.split(' ')[0] || 'Perfil';
+
+    const av = parseFloat(usuario?.avaliacao_media || 0);
+    document.getElementById('stat-avaliacao').textContent = av > 0 ? av.toFixed(1) : 'Novo';
+
+    function renderCarona(c) {
+      return `
+        <div class="carona-card fade-up">
+          <div class="carona-rota">
+            <span class="local">${c.origem}</span>
+            <div class="route-line"></div>
+            <div class="route-dot"></div>
+            <span class="local">${c.destino}</span>
+          </div>
+          <div class="carona-meta">
+            <div class="meta-item">
+              <span class="meta-label">Horário</span>
+              <span class="meta-value">${formatarData(c.horario_partida)}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Vagas</span>
+              <span class="meta-value">${c.vagas_disponiveis} disponíveis</span>
+            </div>
+            ${c.distancia_km ? `<div class="meta-item"><span class="meta-label">Distância</span><span class="meta-value">${c.distancia_km} km</span></div>` : ''}
+          </div>
+          <div class="carona-footer">
+            <div class="user-row">
+              <div class="avatar">${iniciais(c.motorista_nome)}</div>
+              <div>
+                <div class="user-name">${c.motorista_nome}</div>
+                <div class="user-rating">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} — motorista</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem">
+              <div>
+                <div class="preco-label">Por pessoa</div>
+                <div class="preco-valor">${formatarMoeda(c.valor_cobrado)}</div>
+              </div>
+              <a href="carona.html?id=${c.id}" class="btn btn-ghost btn-sm">Ver detalhes</a>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    (async () => {
+      try {
+        const res    = await api.listarCaronas();
+        const caronas = res.data;
+        document.getElementById('stat-caronas').textContent = caronas.length;
+        document.getElementById('stat-minhas').textContent  = caronas.filter(c => c.motorista_id === usuario?.id).length;
+
+        const lista = document.getElementById('lista-caronas');
+        if (caronas.length === 0) {
+          lista.innerHTML = '<div class="empty-state"><p>Nenhuma carona disponível no momento.</p></div>';
+          return;
+        }
+        lista.innerHTML = caronas.slice(0,5).map(renderCarona).join('');
+      } catch(err) {
+        document.getElementById('lista-caronas').innerHTML = '<div class="empty-state"><p>Erro ao carregar caronas.</p></div>';
+      }
+    })();
+  </script>
+</body>
+</html>
