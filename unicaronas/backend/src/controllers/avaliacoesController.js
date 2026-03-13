@@ -24,8 +24,8 @@ const avaliar = async (req, res, next) => {
     );
 
     if (solicitacao.rows.length === 0) {
+      // se não for encontrado corrida retorna erro 400 (return garante que o código pare aqui)
       return res.status(400).json({ success: false, error: 'Carona não encontrada ou não concluída' });
-      // se não for encontrado nada retorna erro 400 (return garante que o código pare aqui)
     }
 
     // extrai id do passageiro e motorista da query
@@ -45,14 +45,15 @@ const avaliar = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Usuário avaliado não participa desta carona' });
     }
 
+    // insere a avaliação no banco 
     const resultado = await db.query(
       `INSERT INTO avaliacoes (solicitacao_id, avaliador_id, avaliado_id, nota, comentario)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [solicitacao_id, avaliador_id, avaliado_id, nota, comentario]
     );
 
-    res.status(201).json({ success: true, data: resultado.rows[0] });
-  } catch (err) {
+    res.status(201).json({ success: true, data: resultado.rows[0] }); // retorna sucesso
+  } catch (err) { // tratamento para caso já tenha uma avaliação desse usuario para a corrida
     if (err.code === '23505') {
       return res.status(409).json({ success: false, error: 'Você já avaliou esta carona' });
     }
@@ -63,8 +64,10 @@ const avaliar = async (req, res, next) => {
 // GET /api/avaliacoes/:usuario_id — Avaliações de um usuário
 const listarPorUsuario = async (req, res, next) => {
   try {
-    const { usuario_id } = req.params;
+    const { usuario_id } = req.params; // pega id do usuario pela URL
 
+    // busca todas as avaliações recebidas por um usuario 
+    // 3 JOIN para enriquecer o resultado
     const resultado = await db.query(
       `SELECT a.*, u.nome AS avaliador_nome, u.foto_url AS avaliador_foto,
               c.origem, c.destino, c.horario_partida
@@ -77,13 +80,14 @@ const listarPorUsuario = async (req, res, next) => {
       [usuario_id]
     );
 
-    res.json({ success: true, data: resultado.rows });
+    res.json({ success: true, data: resultado.rows }); // retorna todas as avaliaçoes encontradas
+    // caso não tenha retorna array vazio sem erro
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { avaliar, listarPorUsuario };
+module.exports = { avaliar, listarPorUsuario }; // exporta as duas funcões
 
 
 // inserir no código:
