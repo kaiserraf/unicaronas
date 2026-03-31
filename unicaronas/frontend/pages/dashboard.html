@@ -66,6 +66,10 @@
     <div id="lista-caronas">
       <p class="text-muted">Carregando...</p>
     </div>
+    <div class="section-label" style="margin-top:2.5rem">Solicitações nas suas caronas</div>
+    <div id="lista-solicitacoes">
+      <p class="text-muted">Carregando...</p>
+    </div>  
   </div>
 
   <script src="../js/api.js"></script>
@@ -144,6 +148,85 @@
           '<div class="empty-state"><p>Erro ao carregar caronas. Verifique se o servidor está rodando.</p></div>';
       }
     })();
+      
+        // Dentro da IIFE que já existe, adicione esta linha no final:
+    carregarSolicitacoes();
+      
+    // Fora da IIFE, adicione as duas funções:
+    async function carregarSolicitacoes() {
+      const container = document.getElementById('lista-solicitacoes');
+      try {
+        // Busca só as caronas do usuário logado
+        const res = await api.listarCaronas({ motorista_id: usuario?.id });
+      
+        if (res.data.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>Você não tem caronas ativas.</p></div>';
+          return;
+        }
+      
+        // Busca solicitações de todas as caronas em paralelo
+        const resultados = await Promise.all(
+          res.data.map(c =>
+            api.solicitacoesCarona(c.id).then(r => ({ carona: c, solicitacoes: r.data }))
+          )
+        );
+      
+        // Só exibe caronas que têm pelo menos uma solicitação
+        const comSolicitacoes = resultados.filter(r => r.solicitacoes.length > 0);
+      
+        if (comSolicitacoes.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>Nenhuma solicitação no momento.</p></div>';
+          return;
+        }
+      
+        container.innerHTML = comSolicitacoes.map(({ carona, solicitacoes }) => `
+          <div class="card mb-2">
+            <div class="card-title">
+              ${carona.origem} → ${carona.destino}
+              <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-3)">
+                — ${formatarData(carona.horario_partida)}
+              </span>
+            </div>
+            ${solicitacoes.map(s => `
+              <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
+                <div class="user-row">
+                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                  <div>
+                    <div class="user-name">${s.passageiro_nome}</div>
+                    <div class="user-rating">
+                      ${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} de avaliação
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
+                  ${s.status === 'pendente' ? `
+                    <span class="badge badge-accent">Pendente</span>
+                    <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', this)">Aceitar</button>
+                    <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada', this)">Recusar</button>
+                  ` : `
+                    <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
+                  `}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+        
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+      }
+    }
+    
+    async function responder(solicitacaoId, status, btn) {
+      btn.disabled = true;
+      try {
+        await api.responderSolicitacao(solicitacaoId, status);
+        carregarSolicitacoes(); // atualiza a lista após responder
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false;
+      }
+    }
 
     document.getElementById('btn-logout')?.addEventListener('click', () => logout());
   </script>

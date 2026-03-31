@@ -181,6 +181,49 @@ const solicitar = async (req, res, next) => {
 };
 
 /**
+ * GET /api/caronas/:id/solicitacoes
+ * Lista solicitações de uma carona. Apenas o motorista pode ver
+*/
+
+const listarSolicitacoes = async(req, res, next) => {
+  try{
+    const carona_id = parseInt(req.params.id, 10);
+    const motorista_id = req.usuario.id;
+
+    if(isNaN(carona_id) || carona_id <= 0){
+      return res.status(400).json({sucess: false, error: 'ID invalido'});
+    }
+
+    // Confirma que a carona pertence ao motorista logado
+    const { rows: caronas } = await db.query(
+      'SELECT id FROM caronas WHERE id = $1 AND motorista_id = $2',
+      [carona_id, motorista_id]
+    );
+
+    if (caronas.length === 0) {
+      return res.status(403).json({ success: false, error: 'Não autorizado' });
+    }
+
+    const { rows } = await db.query(
+      `SELECT s.id, s.status, s.criado_em,
+          u.id AS passageiro_id,
+          u.nome AS passageiro_nome,
+          u.curso AS passageiro_curso,
+          u.avaliacao_media AS passageiro_avaliacao
+        FROM solicitacoes_carona s
+        JOIN usuarios u ON u.id = s.passageiro_id
+        WHERE s.carona_id = $1
+        ORDER BY s.criado_em ASC`,
+      [carona_id]
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * PATCH /api/caronas/solicitacoes/:id
  * Aceita ou recusa uma solicitação. Apenas o motorista da carona pode responder.
  */
@@ -233,4 +276,4 @@ const responderSolicitacao = async (req, res, next) => {
   }
 };
 
-module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao };
+module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes };

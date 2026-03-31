@@ -64,6 +64,7 @@ const api = {
     ).toString();
     return request(`/caronas${qs ? '?' + qs : ''}`);
   },
+  solicitacoesCarona: (caronaId) => request(`/caronas/${caronaId}/solicitacoes`),
   criarCarona:          (body)       => request('/caronas', { method: 'POST', body: JSON.stringify(body) }),
   buscarCarona:         (id)         => request(`/caronas/${id}`),
   solicitarVaga:        (id)         => request(`/caronas/${id}/solicitar`, { method: 'POST' }),
