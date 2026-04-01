@@ -18,8 +18,10 @@ const schemaResponder = {
 router.get('/',                       ctrl.listar);
 router.post('/',        auth, validar(schemaCriar),     ctrl.criar);
 router.get('/:id',                    ctrl.buscarPorId);
-router.get('/:id/solicitacoes', auth,  ctrl.listarSolicitacoes); // importante
+router.get('/:id/solicitacoes', auth,  ctrl.listarSolicitacoes);
+router.get('/:id/minha-solicitacao', auth, ctrl.minhaSolicitacao);
 router.post('/:id/solicitar', auth,   ctrl.solicitar);
+router.patch('/:id/concluir', auth, ctrl.concluir);
 router.patch('/solicitacoes/:id', auth, validar(schemaResponder), ctrl.responderSolicitacao);
 
 module.exports = router;

@@ -68,6 +68,8 @@ const api = {
   criarCarona:          (body)       => request('/caronas', { method: 'POST', body: JSON.stringify(body) }),
   buscarCarona:         (id)         => request(`/caronas/${id}`),
   solicitarVaga:        (id)         => request(`/caronas/${id}/solicitar`, { method: 'POST' }),
+  concluirCarona:       (id)         => request(`/caronas/${id}/concluir`, { method: 'PATCH' }),
+  minhaSolicitacao:     (id)         => request(`/caronas/${id}/minha-solicitacao`),
   responderSolicitacao: (id, status) => request(`/caronas/solicitacoes/${id}`, {
     method: 'PATCH', body: JSON.stringify({ status }),
   }),

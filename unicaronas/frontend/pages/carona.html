@@ -20,19 +20,31 @@
       font-size: 2.5rem; font-weight: 700;
       color: var(--text); font-variant-numeric: tabular-nums;
     }
+    
+    /* Star rating */
+    .rating-input { display: flex; gap: 0.5rem; flex-direction: row-reverse; justify-content: flex-end; margin: 1rem 0; }
+    .rating-input input { display: none; }
+    .rating-input label { cursor: pointer; width: 24px; height: 24px; background: var(--border); clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+    .rating-input input:checked ~ label, .rating-input label:hover, .rating-input label:hover ~ label { background: var(--amber); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none; }
+    .modal-box { background: var(--surface); padding: 2rem; border-radius: var(--radius-lg); width: 100%; max-width: 400px; }
+
     @media(max-width:860px){ .detalhe-layout{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
 <nav class="navbar" aria-label="Navegação principal">
-  <a href="../pages/dashboard.html" class="navbar-brand">UniCaronas</a>
-  <ul class="navbar-links" role="list">
-    <li><a href="../pages/dashboard.html">Painel</a></li>
-    <li><a href="../pages/buscar.html">Buscar carona</a></li>
-    <li><a href="../pages/criar-carona.html">Oferecer carona</a></li>
-    <li><a href="../pages/perfil.html">Perfil</a></li>
-  </ul>
-  <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">Sair</button>
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
+    <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
+    <ul class="navbar-links" role="list" style="list-style:none;">
+      <li><a href="../pages/dashboard.html">Painel</a></li>
+      <li><a href="../pages/buscar.html">Buscar carona</a></li>
+      <li><a href="../pages/criar-carona.html">Oferecer carona</a></li>
+      <li><a href="../pages/perfil.html">Perfil</a></li>
+    </ul>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">Sair</button>
+  </div>
 </nav>
 
   <div class="container">
@@ -40,10 +52,37 @@
     <div id="conteudo" style="padding:2rem 0">
       <p class="text-muted">Carregando...</p>
     </div>
-    <div class="section-label" style="margin-top:2.5rem">Solicitações nas suas caronas</div>
-    <div id="lista-solicitacoes">
-      <p class="text-muted">Carregando...</p>
-    </div>  
+    <div id="area-motorista" style="display:none">
+      <div class="section-label" style="margin-top:2.5rem">Solicitações na sua carona</div>
+      <div id="lista-solicitacoes">
+        <p class="text-muted">Carregando...</p>
+      </div>  
+    </div>
+  </div>
+
+  <!-- Modal de Avaliação -->
+  <div id="modal-avaliacao" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom:1rem">Avaliar Usuário</h3>
+      <div class="form-group">
+        <label class="form-label">Sua nota</label>
+        <div class="rating-input" id="stars">
+          <input type="radio" name="nota" value="5" id="s5"><label for="s5"></label>
+          <input type="radio" name="nota" value="4" id="s4"><label for="s4"></label>
+          <input type="radio" name="nota" value="3" id="s3"><label for="s3"></label>
+          <input type="radio" name="nota" value="2" id="s2"><label for="s2"></label>
+          <input type="radio" name="nota" value="1" id="s1"><label for="s1"></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comentário (opcional)</label>
+        <textarea id="comentario-nota" class="form-control" rows="3" placeholder="Como foi a experiência?"></textarea>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem">
+        <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary btn-full" onclick="enviarAvaliacao()">Enviar Avaliação</button>
+      </div>
+    </div>
   </div>
 
   <script src="../js/api.js"></script>
@@ -51,21 +90,29 @@
     protegerRota();
     const usuario      = getUser();
     const id           = new URLSearchParams(location.search).get('id');
-    let   solicitacaoId = null;
+    let   solicitacaoId = null; // Para o passageiro
     let   chatInterval  = null;
+    let   avaliandoId   = null;
+    let   avaliandoSolId = null;
 
     if (!id) location.href = 'buscar.html';
 
-    (async () => {
+    async function carregarDados() {
       try {
         const res  = await api.buscarCarona(id);
         const c    = res.data;
         const sou_motorista = c.motorista_id === usuario?.id;
 
+        // Se for passageiro, busca sua solicitação
+        let minhaSol = null;
+        if (!sou_motorista) {
+          const resSol = await api.minhaSolicitacao(id);
+          minhaSol = resSol.data;
+          solicitacaoId = minhaSol?.id;
+        }
+
         document.getElementById('conteudo').innerHTML = `
           <div class="detalhe-layout">
-
-            <!-- Coluna principal -->
             <div>
               <div class="page-header" style="padding-top:1.5rem">
                 <div class="detalhe-rota fade-up">
@@ -74,51 +121,53 @@
                   <span>${c.destino}</span>
                 </div>
               </div>
-
               <div class="card mb-2 fade-up fade-up-1">
                 <div class="card-title">Detalhes da viagem</div>
                 <div class="info-row"><span class="label">Data e hora</span><span class="value">${formatarData(c.horario_partida)}</span></div>
                 <div class="info-row"><span class="label">Vagas disponíveis</span><span class="value">${c.vagas_disponiveis} de ${c.vagas_totais}</span></div>
-                <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge badge-green">${c.status}</span></span></div>
+                <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge ${c.status === 'concluida' ? 'badge-green' : 'badge-accent'}">${c.status}</span></span></div>
                 ${c.distancia_km ? `<div class="info-row"><span class="label">Distância estimada</span><span class="value">${c.distancia_km} km</span></div>` : ''}
                 ${c.observacoes ? `<div class="info-row"><span class="label">Observações</span><span class="value">${c.observacoes}</span></div>` : ''}
               </div>
-
               <div class="card fade-up fade-up-2">
                 <div class="card-title">Motorista</div>
                 <div class="user-row">
                   <div class="avatar avatar-lg">${iniciais(c.motorista_nome)}</div>
                   <div>
                     <div style="font-size:1.05rem;font-weight:700">${c.motorista_nome}</div>
-                    <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} de avaliação media</div>
+                    <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} de avaliação média</div>
                     ${c.motorista_telefone ? `<div style="font-size:.82rem;color:var(--text-3);margin-top:.2rem">${c.motorista_telefone}</div>` : ''}
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Coluna lateral -->
             <div>
               <div class="card mb-2 fade-up" style="text-align:center;padding:2rem">
                 <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem">Valor por passageiro</div>
                 <div class="preco-destaque">${formatarMoeda(c.valor_cobrado)}</div>
-                ${c.valor_sugerido && c.valor_sugerido !== c.valor_cobrado
-                  ? `<div style="font-size:.78rem;color:var(--text-3);margin-top:.4rem">Sugestão era ${formatarMoeda(c.valor_sugerido)}</div>`
-                  : ''}
-
-                ${!sou_motorista && c.status === 'ativa' ? `
-                <div style="margin-top:1.5rem" id="acao-box">
-                  <button class="btn btn-success btn-full" onclick="solicitar()">Solicitar vaga</button>
-                  <p style="font-size:.76rem;color:var(--text-3);margin-top:.6rem">O pagamento é realizado dentro da plataforma</p>
-                </div>` : ''}
-
-                ${sou_motorista ? `
+                
+                ${!sou_motorista && !minhaSol && c.status === 'ativa' ? `
                 <div style="margin-top:1.5rem">
-                  <span class="badge badge-accent">Sua carona</span>
+                  <button class="btn btn-success btn-full" onclick="solicitar()">Solicitar vaga</button>
                 </div>` : ''}
-              </div>
 
-              <!-- Chat -->
+                ${!sou_motorista && minhaSol?.status === 'aceita' ? `
+                <div style="margin-top:1.5rem">
+                  <span class="badge badge-green">Vaga confirmada</span>
+                  <button class="btn btn-primary btn-full mt-1" onclick="abrirModal(${c.motorista_id}, ${minhaSol.id})">Avaliar Motorista</button>
+                </div>` : ''}
+
+                ${!sou_motorista && minhaSol?.status === 'pendente' ? `
+                <div style="margin-top:1.5rem"><span class="badge badge-accent">Aguardando resposta</span></div>` : ''}
+
+                ${sou_motorista && c.status !== 'concluida' ? `
+                <div style="margin-top:1.5rem">
+                  <button class="btn btn-success btn-full" onclick="concluirCarona()">Concluir carona</button>
+                </div>` : ''}
+                
+                ${sou_motorista && c.status === 'concluida' ? `
+                <div style="margin-top:1.5rem"><span class="badge badge-green">Viagem finalizada</span></div>` : ''}
+              </div>
               <div id="chat-box" class="card fade-up" style="display:none;padding:1.25rem">
                 <div class="card-title">Conversa</div>
                 <div class="chat-wrap" style="height:360px">
@@ -130,25 +179,114 @@
                 </div>
               </div>
             </div>
-
           </div>`;
+
+        if (sou_motorista) {
+          document.getElementById('area-motorista').style.display = 'block';
+          carregarSolicitacoes();
+        } else if (minhaSol?.status === 'aceita') {
+          iniciarChat();
+        }
+
       } catch(err) {
-        document.getElementById('conteudo').innerHTML =
-          `<div class="alert alert-error" style="margin-top:2rem">${err.message}</div>`;
+        document.getElementById('conteudo').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
       }
-    })();
+    }
 
     async function solicitar() {
       try {
-        const res = await api.solicitarVaga(id);
-        solicitacaoId = res.data.id;
-        showAlert('Solicitação enviada. Aguarde o motorista aceitar.', 'success');
-        document.getElementById('acao-box').style.display = 'none';
-        iniciarChat();
+        await api.solicitarVaga(id);
+        showAlert('Solicitação enviada!', 'success');
+        carregarDados();
       } catch(err) { showAlert(err.message, 'error'); }
     }
 
+    async function concluirCarona() {
+      if (!confirm('Deseja marcar esta carona como concluída?')) return;
+      try {
+        await api.concluirCarona(id);
+        showAlert('Carona concluída!', 'success');
+        carregarDados();
+      } catch(err) { showAlert(err.message, 'error'); }
+    }
+
+    function abrirModal(avaliadoId, solId) {
+      avaliandoId = avaliadoId;
+      avaliandoSolId = solId;
+      document.getElementById('modal-avaliacao').style.display = 'flex';
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-avaliacao').style.display = 'none';
+    }
+
+    async function enviarAvaliacao() {
+      const notaEl = document.querySelector('input[name="nota"]:checked');
+      if (!notaEl) return showAlert('Selecione uma nota', 'error');
+      
+      const dados = {
+        solicitacao_id: avaliandoSolId,
+        avaliado_id: avaliandoId,
+        nota: parseInt(notaEl.value),
+        comentario: document.getElementById('comentario-nota').value.trim()
+      };
+
+      try {
+        await api.avaliar(dados);
+        showAlert('Avaliação enviada!', 'success');
+        fecharModal();
+      } catch(err) {
+        showAlert(err.message, 'error');
+      }
+    }
+
+    async function carregarSolicitacoes() {
+      const container = document.getElementById('lista-solicitacoes');
+      try {
+        const res = await api.solicitacoesCarona(id);
+        const solicitacoes = res.data;
+      
+        if (solicitacoes.length === 0) {
+          container.innerHTML = '<div class="empty-state"><p>Nenhuma solicitação até agora.</p></div>';
+          return;
+        }
+      
+        container.innerHTML = solicitacoes.map(s => `
+          <div class="card mb-2">
+            <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
+              <div class="user-row">
+                <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                <div>
+                  <div class="user-name">${s.passageiro_nome}</div>
+                  <div class="user-rating">${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
+                ${s.status === 'pendente' ? `
+                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita')">Aceitar</button>
+                  <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada')">Recusar</button>
+                ` : `
+                  <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
+                  ${s.status === 'aceita' ? `<button class="btn btn-primary btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">Avaliar</button>` : ''}
+                `}
+              </div>
+            </div>
+          </div>`).join('');
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
+      }
+    }
+
+    async function responder(sid, status) {
+      try {
+        await api.responderSolicitacao(sid, status);
+        carregarSolicitacoes();
+        carregarDados();
+      } catch (err) { showAlert(err.message, 'error'); }
+    }
+
     function iniciarChat() {
+      if (chatInterval) return;
       document.getElementById('chat-box').style.display = 'block';
       carregarMensagens();
       chatInterval = setInterval(carregarMensagens, 5000);
@@ -162,11 +300,8 @@
         const el   = document.getElementById('chat-msgs');
         el.innerHTML = msgs.map(m => {
           const minha = m.remetente_id === usuario?.id;
-          const hora  = new Date(m.enviado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
           return `<div class="mensagem ${minha?'minha':''}">
-            ${!minha?`<div style="font-size:.72rem;color:var(--text-3);margin-bottom:.2rem">${m.remetente_nome}</div>`:''}
             <div class="mensagem-bubble">${m.conteudo}</div>
-            <div class="mensagem-hora">${hora}</div>
           </div>`;
         }).join('');
         el.scrollTop = el.scrollHeight;
@@ -174,100 +309,17 @@
     }
 
     async function enviarMensagem() {
-      if (!solicitacaoId) return;
-      const texto = document.getElementById('chat-texto').value.trim();
-      if (!texto) return;
+      const txt = document.getElementById('chat-texto').value.trim();
+      if (!txt || !solicitacaoId) return;
       try {
-        await api.enviarMensagem({ solicitacao_id: solicitacaoId, conteudo: texto });
+        await api.enviarMensagem({ solicitacao_id: solicitacaoId, conteudo: txt });
         document.getElementById('chat-texto').value = '';
         carregarMensagens();
       } catch(err) { showAlert(err.message, 'error'); }
     }
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && document.activeElement.id === 'chat-texto') enviarMensagem();
-    });
-
-     document.getElementById('btn-logout')?.addEventListener('click', () => logout());
-
-    // Dentro da IIFE que já existe, adicione esta linha no final:
-    carregarSolicitacoes();
-
-    // Fora da IIFE, adicione as duas funções:
-    async function carregarSolicitacoes() {
-      const container = document.getElementById('lista-solicitacoes');
-      try {
-        // Busca só as caronas do usuário logado
-        const res = await api.listarCaronas({ motorista_id: usuario?.id });
-      
-        if (res.data.length === 0) {
-          container.innerHTML = '<div class="empty-state"><p>Você não tem caronas ativas.</p></div>';
-          return;
-        }
-      
-        // Busca solicitações de todas as caronas em paralelo
-        const resultados = await Promise.all(
-          res.data.map(c =>
-            api.solicitacoesCarona(c.id).then(r => ({ carona: c, solicitacoes: r.data }))
-          )
-        );
-      
-        // Só exibe caronas que têm pelo menos uma solicitação
-        const comSolicitacoes = resultados.filter(r => r.solicitacoes.length > 0);
-      
-        if (comSolicitacoes.length === 0) {
-          container.innerHTML = '<div class="empty-state"><p>Nenhuma solicitação no momento.</p></div>';
-          return;
-        }
-      
-        container.innerHTML = comSolicitacoes.map(({ carona, solicitacoes }) => `
-          <div class="card mb-2">
-            <div class="card-title">
-              ${carona.origem} → ${carona.destino}
-              <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-3)">
-                — ${formatarData(carona.horario_partida)}
-              </span>
-            </div>
-            ${solicitacoes.map(s => `
-              <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
-                <div class="user-row">
-                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
-                  <div>
-                    <div class="user-name">${s.passageiro_nome}</div>
-                    <div class="user-rating">
-                      ${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} de avaliação
-                    </div>
-                  </div>
-                </div>
-                <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
-                  ${s.status === 'pendente' ? `
-                    <span class="badge badge-accent">Pendente</span>
-                    <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', this)">Aceitar</button>
-                    <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada', this)">Recusar</button>
-                  ` : `
-                    <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
-                  `}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `).join('');
-        
-      } catch (err) {
-        container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
-      }
-    }
-
-    async function responder(solicitacaoId, status, btn) {
-      btn.disabled = true;
-      try {
-        await api.responderSolicitacao(solicitacaoId, status);
-        carregarSolicitacoes(); // atualiza a lista após responder
-      } catch (err) {
-        showAlert(err.message, 'error');
-        btn.disabled = false;
-      }
-    }
+    carregarDados();
+    document.getElementById('btn-logout')?.addEventListener('click', () => logout());
   </script>
 </body>
 </html>

@@ -276,4 +276,46 @@ const responderSolicitacao = async (req, res, next) => {
   }
 };
 
-module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes };
+/**
+ * PATCH /api/caronas/:id/concluir
+ */
+const concluir = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const motorista_id = req.usuario.id;
+
+    const { rows } = await db.query(
+      'UPDATE caronas SET status = \'concluida\', atualizado_em = NOW() WHERE id = $1 AND motorista_id = $2 RETURNING *',
+      [id, motorista_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Carona não encontrada ou não autorizada' });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/caronas/:id/minha-solicitacao
+ */
+const minhaSolicitacao = async (req, res, next) => {
+  try {
+    const carona_id = parseInt(req.params.id, 10);
+    const passageiro_id = req.usuario.id;
+
+    const { rows } = await db.query(
+      'SELECT * FROM solicitacoes_carona WHERE carona_id = $1 AND passageiro_id = $2',
+      [carona_id, passageiro_id]
+    );
+
+    res.json({ success: true, data: rows[0] || null });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes, concluir, minhaSolicitacao };
