@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (isNaN(perfilId) || perfilId <= 0) {
     setLoader(false);
-    showAlert('ID de usuario invalido', 'error');
+    showAlert(currentLang === 'pt' ? 'ID de usuário inválido' : 'Invalid user ID', 'error');
     return;
   }
 
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   } catch (err) {
     if (/token/i.test(err.message)) { logout(); return; }
-    showAlert(err.message || 'Erro ao carregar perfil', 'error');
+    showAlert(err.message || (currentLang === 'pt' ? 'Erro ao carregar perfil' : 'Error loading profile'), 'error');
   } finally {
     setLoader(false);
   }
@@ -42,9 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function renderPerfil(u, ehProprio) {
   atualizarAvatar('perfil-avatar', u.foto_url, u.nome);
   setText('perfil-nome',   u.nome);
-  setText('perfil-curso',  u.curso  || 'Curso nao informado');
+  setText('perfil-curso',  u.curso  || (currentLang === 'pt' ? 'Curso não informado' : 'Course not informed'));
   setText('perfil-email',  u.email);
-  setText('perfil-membro', 'Membro desde ' + formatarDataCurta(u.criado_em));
+  setText('perfil-membro', t('profile-member-since') + ' ' + formatarDataCurta(u.criado_em));
   document.title = u.nome + ' — UniCaronas';
 
   const btn = document.getElementById('btn-editar-perfil');
@@ -112,14 +112,29 @@ function initEdicao(u) {
   document.getElementById('edit-nome').value     = u.nome     || '';
   document.getElementById('edit-telefone').value = u.telefone || '';
   document.getElementById('edit-curso').value    = u.curso    || '';
-  document.getElementById('edit-foto').value     = u.foto_url || '';
 
   // Preview inicial
   atualizarPreviewFoto(u.foto_url, u.nome);
 
-  // Preview ao digitar URL
-  document.getElementById('edit-foto').addEventListener('input', (e) => {
-    atualizarPreviewFoto(e.target.value.trim(), document.getElementById('edit-nome').value || getUser()?.nome);
+  // Preview ao selecionar arquivo do dispositivo
+  document.getElementById('edit-foto').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const fileNameDisplay = document.getElementById('file-name-display');
+    
+    if (file) {
+      if (fileNameDisplay) {
+        fileNameDisplay.textContent = file.name;
+        fileNameDisplay.style.display = 'block';
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        atualizarPreviewFoto(event.target.result, document.getElementById('edit-nome').value || getUser()?.nome);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+    }
   });
 
   document.getElementById('modal-fechar').addEventListener('click', fecharModal);
@@ -158,12 +173,17 @@ async function salvarPerfil() {
   btn.textContent = 'Salvando...';
 
   try {
-    const res = await api.atualizarPerfil({
-      nome,
-      telefone: document.getElementById('edit-telefone').value.trim() || undefined,
-      curso:    document.getElementById('edit-curso').value.trim()    || undefined,
-      foto_url: document.getElementById('edit-foto').value.trim()     || undefined,
-    });
+    const formData = new FormData();
+    formData.append('nome', nome);
+    formData.append('telefone', document.getElementById('edit-telefone').value.trim());
+    formData.append('curso', document.getElementById('edit-curso').value.trim());
+    
+    const inputFoto = document.getElementById('edit-foto');
+    if (inputFoto.files && inputFoto.files[0]) {
+      formData.append('foto', inputFoto.files[0]);
+    }
+
+    const res = await api.atualizarPerfil(formData);
 
     setUser({ ...getUser(), nome: res.data.nome, foto_url: res.data.foto_url });
     setText('perfil-nome',  res.data.nome);

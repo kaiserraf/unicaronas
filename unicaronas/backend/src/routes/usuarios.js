@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const ctrl   = require('../controllers/usuariosController');
 const auth   = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const { validar } = require('../middleware/validacao');
 
 const schemasCadastro = {
@@ -19,12 +20,11 @@ const schemaPerfil = {
   nome:     { type: 'string', minLength: 2, maxLength: 100 },
   telefone: { type: 'string', maxLength: 20 },
   curso:    { type: 'string', maxLength: 100 },
-  foto_url: { type: 'string', maxLength: 255 },
 };
 
 router.post('/',        validar(schemasCadastro), ctrl.cadastrar);
 router.post('/login',   validar(schemasLogin),    ctrl.login);
 router.get('/:id',      auth,                     ctrl.buscarPorId);
-router.patch('/perfil', auth, validar(schemaPerfil), ctrl.atualizarPerfil);
+router.patch('/perfil', auth, upload.single('foto'), validar(schemaPerfil), ctrl.atualizarPerfil);
 
 module.exports = router;

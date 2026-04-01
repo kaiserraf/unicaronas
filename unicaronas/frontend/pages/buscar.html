@@ -14,47 +14,52 @@
   <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
     <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
     <ul class="navbar-links" role="list" style="list-style:none;">
-      <li><a href="../pages/dashboard.html">Painel</a></li>
-      <li><a href="../pages/buscar.html" aria-current="page">Buscar carona</a></li>
-      <li><a href="../pages/criar-carona.html">Oferecer carona</a></li>
-      <li><a href="../pages/perfil.html">Perfil</a></li>
+      <li><a href="../pages/dashboard.html" data-i18n="nav-dashboard">Painel</a></li>
+      <li><a href="../pages/buscar.html" aria-current="page" data-i18n="nav-buscar">Buscar carona</a></li>
+      <li><a href="../pages/criar-carona.html" data-i18n="nav-oferecer">Oferecer carona</a></li>
+      <li><a href="../pages/perfil.html" data-i18n="nav-perfil">Perfil</a></li>
     </ul>
-    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">Sair</button>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button" data-i18n="nav-sair">Sair</button>
   </div>
 </nav>
 
   <div class="container">
     <div class="page-header fade-up">
-      <h2>Buscar caronas</h2>
-      <p>Encontre uma carona disponível no seu trajeto</p>
+      <h2 data-i18n="search-title">Buscar caronas</h2>
+      <p data-i18n="search-sub">Encontre uma carona disponível no seu trajeto</p>
     </div>
 
     <div class="filtros fade-up">
       <div class="filtros-grid">
         <div class="form-group" style="margin:0">
-          <label class="form-label">Origem</label>
-          <input class="form-control" id="f-origem" type="text" placeholder="Bairro ou endereço">
+          <label class="form-label" data-i18n="filter-origin">Origem</label>
+          <input class="form-control" id="f-origem" type="text" placeholder="Bairro ou endereço" data-i18n="filter-origin">
         </div>
         <div class="form-group" style="margin:0">
-          <label class="form-label">Destino</label>
-          <input class="form-control" id="f-destino" type="text" placeholder="Campus ou endereço">
+          <label class="form-label" data-i18n="filter-destination">Destino</label>
+          <input class="form-control" id="f-destino" type="text" placeholder="Campus ou endereço" data-i18n="filter-destination">
         </div>
         <div class="form-group" style="margin:0">
-          <label class="form-label">Data</label>
+          <label class="form-label" data-i18n="filter-date">Data</label>
           <input class="form-control" id="f-data" type="date">
         </div>
-        <button class="btn btn-primary" onclick="buscar()">Buscar</button>
+        <button class="btn btn-primary" onclick="buscar()" data-i18n="btn-filter">Buscar</button>
       </div>
     </div>
 
     <div id="resultado-lista">
-      <p class="text-muted">Carregando...</p>
+      <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
     </div>
   </div>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     protegerRota();
+
+    window.addEventListener('languageChanged', () => {
+      buscar();
+    });
 
     function renderCarona(c) {
       return `
@@ -67,14 +72,14 @@
           </div>
           <div class="carona-meta">
             <div class="meta-item">
-              <span class="meta-label">Horário</span>
+              <span class="meta-label">${t('card-time')}</span>
               <span class="meta-value">${formatarData(c.horario_partida)}</span>
             </div>
             <div class="meta-item">
-              <span class="meta-label">Vagas</span>
-              <span class="meta-value">${c.vagas_disponiveis} disponíveis</span>
+              <span class="meta-label">${t('card-vagas')}</span>
+              <span class="meta-value">${c.vagas_disponiveis} ${t('card-vagas-avail')}</span>
             </div>
-            ${c.distancia_km ? `<div class="meta-item"><span class="meta-label">Distância</span><span class="meta-value">${c.distancia_km} km</span></div>` : ''}
+            ${c.distancia_km ? `<div class="meta-item"><span class="meta-label">${t('card-dist')}</span><span class="meta-value">${c.distancia_km} km</span></div>` : ''}
           </div>
           ${c.observacoes ? `<p style="font-size:.85rem;color:var(--text-3);margin-bottom:1rem">${c.observacoes}</p>` : ''}
           <div class="carona-footer">
@@ -82,15 +87,15 @@
               <div class="avatar">${iniciais(c.motorista_nome)}</div>
               <div>
                 <div class="user-name">${c.motorista_nome}</div>
-                <div class="user-rating">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} — motorista</div>
+                <div class="user-rating">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} — ${currentLang === 'pt' ? 'motorista' : 'driver'}</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:1rem">
               <div>
-                <div class="preco-label">Por pessoa</div>
+                <div class="preco-label">${t('card-price-per-person')}</div>
                 <div class="preco-valor">${formatarMoeda(c.valor_cobrado)}</div>
               </div>
-              <a href="carona.html?id=${c.id}" class="btn btn-ghost btn-sm">Ver detalhes</a>
+              <a href="carona.html?id=${c.id}" class="btn btn-ghost btn-sm">${t('card-details')}</a>
             </div>
           </div>
         </div>`;
@@ -106,12 +111,12 @@
       if (data)    params.data    = data;
 
       const lista = document.getElementById('resultado-lista');
-      lista.innerHTML = '<p class="text-muted">Buscando...</p>';
+      lista.innerHTML = `<p class="text-muted">${currentLang === 'pt' ? 'Buscando...' : 'Searching...'}</p>`;
 
       try {
         const res = await api.listarCaronas(params);
         if (res.data.length === 0) {
-          lista.innerHTML = '<div class="empty-state"><p>Nenhuma carona encontrada para este trajeto.</p></div>';
+          lista.innerHTML = `<div class="empty-state"><p>${t('empty-rides')}</p></div>`;
           return;
         }
         lista.innerHTML = res.data.map(renderCarona).join('');

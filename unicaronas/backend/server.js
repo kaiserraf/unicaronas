@@ -57,6 +57,7 @@ module.exports = app;
 const express = require('express');
 const cors    = require('cors');
 const helmet  = require('helmet');
+const path    = require('path');
 require('dotenv').config();
 
 const usuariosRoutes   = require('./src/routes/usuarios');
@@ -87,6 +88,9 @@ app.use(helmet({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Servir arquivos estáticos (uploads) ─────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Rota de health check ────────────────────────────────────
 app.get('/health', (req, res) => {

@@ -35,14 +35,25 @@ const protegerRota = () => {
 
 const request = async (path, options = {}) => {
   const token = getToken();
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const headers = { ...options.headers };
+  
+  // Se não for FormData, define Content-Type como JSON
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   let response;
   try {
     response = await fetch(`${API_URL}${path}`, { ...options, headers });
   } catch (e) {
-    throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão.');
+    const errorMsg = (typeof currentLang !== 'undefined' && currentLang === 'en') 
+      ? 'Could not connect to the server. Check your connection.' 
+      : (typeof currentLang !== 'undefined' && currentLang === 'es')
+      ? 'No se pudo conectar al servidor. Verifique su conexión.'
+      : 'Não foi possível conectar ao servidor. Verifique sua conexão.';
+    throw new Error(errorMsg);
   }
 
   const data = await response.json();
@@ -56,7 +67,10 @@ const api = {
   cadastrar:       (body) => request('/usuarios', { method: 'POST', body: JSON.stringify(body) }),
   login:           (body) => request('/usuarios/login', { method: 'POST', body: JSON.stringify(body) }),
   perfil:          (id)   => request(`/usuarios/${id}`),
-  atualizarPerfil: (body) => request('/usuarios/perfil', { method: 'PATCH', body: JSON.stringify(body) }),
+  atualizarPerfil: (body) => request('/usuarios/perfil', { 
+    method: 'PATCH', 
+    body: body instanceof FormData ? body : JSON.stringify(body) 
+  }),
 
   listarCaronas: (params = {}) => {
     const qs = new URLSearchParams(

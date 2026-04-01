@@ -26,66 +26,79 @@
   <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
     <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
     <ul class="navbar-links" role="list" style="list-style:none;">
-      <li><a href="../pages/dashboard.html" aria-current="page">Painel</a></li>
-      <li><a href="../pages/buscar.html">Buscar carona</a></li>
-      <li><a href="../pages/criar-carona.html">Oferecer carona</a></li>
-      <li><a href="../pages/perfil.html">Perfil</a></li>
+      <li><a href="../pages/dashboard.html" aria-current="page" data-i18n="nav-dashboard">Painel</a></li>
+      <li><a href="../pages/buscar.html" data-i18n="nav-buscar">Buscar carona</a></li>
+      <li><a href="../pages/criar-carona.html" data-i18n="nav-oferecer">Oferecer carona</a></li>
+      <li><a href="../pages/perfil.html" data-i18n="nav-perfil">Perfil</a></li>
     </ul>
-    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">Sair</button>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button" data-i18n="nav-sair">Sair</button>
   </div>
 </nav>
 
   <div class="container">
     <div class="page-header fade-up">
       <div class="accent-bar"></div>
-      <h2 id="boas-vindas">Carregando...</h2>
-      <p>Encontre ou ofereça uma carona para hoje</p>
+      <h2 id="boas-vindas" data-i18n="welcome-loading">Carregando...</h2>
+      <p data-i18n="sub-welcome">Encontre ou ofereça uma carona para hoje</p>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card fade-up fade-up-1">
         <div class="stat-num" id="stat-caronas">—</div>
-        <div class="stat-label">Caronas disponíveis</div>
+        <div class="stat-label" data-i18n="stat-avail-rides">Caronas disponíveis</div>
       </div>
       <div class="stat-card fade-up fade-up-2">
         <div class="stat-num" id="stat-minhas">—</div>
-        <div class="stat-label">Minhas caronas</div>
+        <div class="stat-label" data-i18n="stat-my-rides">Minhas caronas</div>
       </div>
       <div class="stat-card fade-up fade-up-3">
         <div class="stat-num" id="stat-avaliacao">—</div>
-        <div class="stat-label">Minha avaliação</div>
+        <div class="stat-label" data-i18n="stat-my-rating">Minha avaliação</div>
       </div>
     </div>
 
     <div class="actions-bar fade-up">
-      <a href="buscar.html"       class="btn btn-primary">Buscar carona</a>
-      <a href="criar-carona.html" class="btn btn-ghost">Oferecer carona</a>
+      <a href="buscar.html"       class="btn btn-primary" data-i18n="btn-search-ride">Buscar carona</a>
+      <a href="criar-carona.html" class="btn btn-ghost" data-i18n="btn-offer-ride">Oferecer carona</a>
     </div>
 
-    <div class="section-label">Caronas disponíveis agora</div>
+    <div class="section-label" data-i18n="label-rides-now">Caronas disponíveis agora</div>
     <div id="lista-caronas">
-      <p class="text-muted">Carregando...</p>
+      <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
     </div>
-    <div class="section-label" style="margin-top:2.5rem">Solicitações nas suas caronas</div>
+    <div class="section-label" style="margin-top:2.5rem" data-i18n="label-my-requests">Solicitações nas suas caronas</div>
     <div id="lista-solicitacoes">
-      <p class="text-muted">Carregando...</p>
+      <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
     </div>  
   </div>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     protegerRota();
     const usuario = getUser();
 
-    // Saudação
-    const hora = new Date().getHours();
-    const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
-    document.getElementById('boas-vindas').textContent =
-      `${saudacao}, ${usuario?.nome?.split(' ')[0] || 'Usuário'}`;
+    // Saudação dinâmica com suporte a i18n
+    function atualizarSaudacao() {
+      const hora = new Date().getHours();
+      let key = 'welcome-evening';
+      if (hora < 12) key = 'welcome-morning';
+      else if (hora < 18) key = 'welcome-afternoon';
+      
+      document.getElementById('boas-vindas').textContent =
+        `${t(key)}, ${usuario?.nome?.split(' ')[0] || t('nav-perfil')}`;
+    }
+
+    // Escuta mudança de idioma para atualizar saudações e outros elementos dinâmicos
+    window.addEventListener('languageChanged', () => {
+      atualizarSaudacao();
+      carregarCaronas();
+      carregarSolicitacoes();
+    });
 
     // Avaliação
     const av = parseFloat(usuario?.avaliacao_media || 0);
-    document.getElementById('stat-avaliacao').textContent = av > 0 ? av.toFixed(1) : 'Novo';
+    document.getElementById('stat-avaliacao').textContent = av > 0 ? av.toFixed(1) : (currentLang === 'pt' ? 'Novo' : 'New');
 
     function renderCarona(c) {
       return `
@@ -98,35 +111,35 @@
           </div>
           <div class="carona-meta">
             <div class="meta-item">
-              <span class="meta-label">Horário</span>
+              <span class="meta-label">${t('card-time')}</span>
               <span class="meta-value">${formatarData(c.horario_partida)}</span>
             </div>
             <div class="meta-item">
-              <span class="meta-label">Vagas</span>
-              <span class="meta-value">${c.vagas_disponiveis} disponíveis</span>
+              <span class="meta-label">${t('card-vagas')}</span>
+              <span class="meta-value">${c.vagas_disponiveis} ${t('card-vagas-avail')}</span>
             </div>
-            ${c.distancia_km ? `<div class="meta-item"><span class="meta-label">Distância</span><span class="meta-value">${c.distancia_km} km</span></div>` : ''}
+            ${c.distancia_km ? `<div class="meta-item"><span class="meta-label">${t('card-dist')}</span><span class="meta-value">${c.distancia_km} km</span></div>` : ''}
           </div>
           <div class="carona-footer">
             <div class="user-row">
               <div class="avatar">${iniciais(c.motorista_nome)}</div>
               <div>
                 <div class="user-name">${c.motorista_nome}</div>
-                <div class="user-rating">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} — motorista</div>
+                <div class="user-rating">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} — ${currentLang === 'pt' ? 'motorista' : 'driver'}</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:1rem">
               <div>
-                <div class="preco-label">Por pessoa</div>
+                <div class="preco-label">${t('card-price-per-person')}</div>
                 <div class="preco-valor">${formatarMoeda(c.valor_cobrado)}</div>
               </div>
-              <a href="carona.html?id=${c.id}" class="btn btn-ghost btn-sm">Ver detalhes</a>
+              <a href="carona.html?id=${c.id}" class="btn btn-ghost btn-sm">${t('card-details')}</a>
             </div>
           </div>
         </div>`;
     }
 
-    (async () => {
+    async function carregarCaronas() {
       try {
         const res     = await api.listarCaronas();
         const caronas = res.data;
@@ -137,7 +150,7 @@
 
         const lista = document.getElementById('lista-caronas');
         if (caronas.length === 0) {
-          lista.innerHTML = '<div class="empty-state"><p>Nenhuma carona disponível no momento.</p></div>';
+          lista.innerHTML = `<div class="empty-state"><p>${t('empty-rides')}</p></div>`;
           return;
         }
         lista.innerHTML = caronas.slice(0, 5).map(renderCarona).join('');
@@ -145,37 +158,30 @@
         document.getElementById('stat-caronas').textContent = '—';
         document.getElementById('stat-minhas').textContent  = '—';
         document.getElementById('lista-caronas').innerHTML =
-          '<div class="empty-state"><p>Erro ao carregar caronas. Verifique se o servidor está rodando.</p></div>';
+          `<div class="empty-state"><p>${t('error-rides')}</p></div>`;
       }
-    })();
-      
-    // Dentro da IIFE que já existe, adicione esta linha no final:
-    carregarSolicitacoes();
-      
-    // Fora da IIFE, adicione as duas funções:
+    }
+
     async function carregarSolicitacoes() {
       const container = document.getElementById('lista-solicitacoes');
       try {
-        // Busca só as caronas do usuário logado
         const res = await api.listarCaronas({ motorista_id: usuario?.id });
       
         if (res.data.length === 0) {
-          container.innerHTML = '<div class="empty-state"><p>Você não tem caronas ativas.</p></div>';
+          container.innerHTML = `<div class="empty-state"><p>${currentLang === 'pt' ? 'Você não tem caronas ativas.' : 'You have no active rides.'}</p></div>`;
           return;
         }
       
-        // Busca solicitações de todas as caronas em paralelo
         const resultados = await Promise.all(
           res.data.map(c =>
             api.solicitacoesCarona(c.id).then(r => ({ carona: c, solicitacoes: r.data }))
           )
         );
       
-        // Só exibe caronas que têm pelo menos uma solicitação
         const comSolicitacoes = resultados.filter(r => r.solicitacoes.length > 0);
       
         if (comSolicitacoes.length === 0) {
-          container.innerHTML = '<div class="empty-state"><p>Nenhuma solicitação no momento.</p></div>';
+          container.innerHTML = `<div class="empty-state"><p>${currentLang === 'pt' ? 'Nenhuma solicitação no momento.' : 'No requests at the moment.'}</p></div>`;
           return;
         }
       
@@ -194,15 +200,15 @@
                   <div>
                     <div class="user-name">${s.passageiro_nome}</div>
                     <div class="user-rating">
-                      ${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} de avaliação
+                      ${s.passageiro_curso || (currentLang === 'pt' ? 'Curso não informado' : 'Course not informed')} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ${currentLang === 'pt' ? 'de avaliação' : 'rating'}
                     </div>
                   </div>
                 </div>
                 <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
                   ${s.status === 'pendente' ? `
-                    <span class="badge badge-accent">Pendente</span>
-                    <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', this)">Aceitar</button>
-                    <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada', this)">Recusar</button>
+                    <span class="badge badge-accent">${currentLang === 'pt' ? 'Pendente' : 'Pending'}</span>
+                    <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', this)">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
+                    <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada', this)">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
                   ` : `
                     <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
                   `}
@@ -216,12 +222,16 @@
         container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
       }
     }
+
+    atualizarSaudacao();
+    carregarCaronas();
+    carregarSolicitacoes();
     
     async function responder(solicitacaoId, status, btn) {
       btn.disabled = true;
       try {
         await api.responderSolicitacao(solicitacaoId, status);
-        carregarSolicitacoes(); // atualiza a lista após responder
+        carregarSolicitacoes();
       } catch (err) {
         showAlert(err.message, 'error');
         btn.disabled = false;

@@ -28,8 +28,8 @@
   <div class="cadastro-wrap fade-up">
     <div class="cadastro-header">
       <a class="cadastro-brand" href="login.html">Uni<span>Caronas</span></a>
-      <h1 class="cadastro-title">Criar sua conta</h1>
-      <p class="cadastro-subtitle">Use o e-mail da sua universidade para se cadastrar</p>
+      <h1 class="cadastro-title" data-i18n="register-title">Criar sua conta</h1>
+      <p class="cadastro-subtitle" data-i18n="register-sub">Use o e-mail da sua universidade para se cadastrar</p>
     </div>
 
     <div class="card">
@@ -37,48 +37,49 @@
 
       <div class="grid-2">
         <div class="form-group">
-          <label class="form-label">Nome completo</label>
-          <input class="form-control" id="nome" type="text" placeholder="Seu nome">
+          <label class="form-label" data-i18n="label-full-name">Nome completo</label>
+          <input class="form-control" id="nome" type="text" placeholder="Seu nome" data-i18n="label-full-name">
         </div>
         <div class="form-group">
-          <label class="form-label">Matrícula</label>
-          <input class="form-control" id="matricula" type="text" placeholder="2024001">
+          <label class="form-label" data-i18n="label-matricula">Matrícula</label>
+          <input class="form-control" id="matricula" type="text" placeholder="2024001" data-i18n="label-matricula">
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">E-mail institucional</label>
-        <input class="form-control" id="email" type="email" placeholder="seu@universidade.edu.br">
-        <span class="form-hint">Apenas e-mails da sua universidade são aceitos</span>
+        <label class="form-label" data-i18n="label-email">E-mail institucional</label>
+        <input class="form-control" id="email" type="email" placeholder="seu@unibrasil.com.br" data-i18n="label-email">
+        <span class="form-hint" data-i18n="file-formats">Apenas e-mails da sua universidade são aceitos</span>
       </div>
 
       <div class="grid-2">
         <div class="form-group">
-          <label class="form-label">Curso</label>
-          <input class="form-control" id="curso" type="text" placeholder="Engenharia de Software">
+          <label class="form-label" data-i18n="label-course">Curso</label>
+          <input class="form-control" id="curso" type="text" placeholder="Engenharia de Software" data-i18n="label-course">
         </div>
         <div class="form-group">
-          <label class="form-label">Telefone</label>
-          <input class="form-control" id="telefone" type="tel" placeholder="(41) 99999-0000">
+          <label class="form-label" data-i18n="label-phone">Telefone</label>
+          <input class="form-control" id="telefone" type="tel" placeholder="(41) 99999-0000" data-i18n="label-phone">
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Senha</label>
-        <input class="form-control" id="senha" type="password" placeholder="Mínimo 8 caracteres">
+        <label class="form-label" data-i18n="label-password">Senha</label>
+        <input class="form-control" id="senha" type="password" placeholder="Mínimo 8 caracteres" data-i18n="label-password">
       </div>
 
-      <button class="btn btn-primary btn-full mt-2" onclick="cadastrar()" id="btn-cadastrar">
+      <button class="btn btn-primary btn-full mt-2" onclick="cadastrar()" id="btn-cadastrar" data-i18n="btn-register">
         Criar conta
       </button>
 
       <p class="text-center text-muted mt-2" style="font-size:.85rem">
-        Já tem conta? <a href="login.html">Entrar</a>
+        <span data-i18n="register-has-account">Já tem conta?</span> <a href="login.html" data-i18n="register-login-now">Entrar</a>
       </p>
     </div>
   </div>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     async function cadastrar() {
       const dados = {
@@ -91,22 +92,22 @@
       };
 
       if (!dados.nome || !dados.email || !dados.matricula || !dados.senha) {
-        return showAlert('Preencha nome, e-mail, matrícula e senha', 'error');
+        return showAlert(currentLang === 'pt' ? 'Preencha nome, e-mail, matrícula e senha' : 'Fill in name, email, student ID and password', 'error');
       }
       if (dados.senha.length < 8) {
-        return showAlert('A senha deve ter ao menos 8 caracteres', 'error');
+        return showAlert(currentLang === 'pt' ? 'A senha deve ter ao menos 8 caracteres' : 'The password must have at least 8 characters', 'error');
       }
 
       const btn = document.getElementById('btn-cadastrar');
-      btn.disabled = true; btn.textContent = 'Criando conta...';
+      btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Criando conta...' : 'Creating account...';
 
       try {
         await api.cadastrar(dados);
-        showAlert('Conta criada com sucesso! Redirecionando...', 'success');
+        showAlert(currentLang === 'pt' ? 'Conta criada com sucesso! Redirecionando...' : 'Account created successfully! Redirecting...', 'success');
         setTimeout(() => window.location.href = 'login.html', 2000);
       } catch (err) {
         showAlert(err.message, 'error');
-        btn.disabled = false; btn.textContent = 'Criar conta';
+        btn.disabled = false; btn.textContent = t('btn-register');
       }
     }
   </script>

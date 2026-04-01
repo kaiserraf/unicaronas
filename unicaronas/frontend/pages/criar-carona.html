@@ -19,20 +19,20 @@
   <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
     <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
     <ul class="navbar-links" role="list" style="list-style:none;">
-      <li><a href="../pages/dashboard.html">Painel</a></li>
-      <li><a href="../pages/buscar.html">Buscar carona</a></li>
-      <li><a href="../pages/criar-carona.html" aria-current="page">Oferecer carona</a></li>
-      <li><a href="../pages/perfil.html">Perfil</a></li>
+      <li><a href="../pages/dashboard.html" data-i18n="nav-dashboard">Painel</a></li>
+      <li><a href="../pages/buscar.html" data-i18n="nav-buscar">Buscar carona</a></li>
+      <li><a href="../pages/criar-carona.html" aria-current="page" data-i18n="nav-oferecer">Oferecer carona</a></li>
+      <li><a href="../pages/perfil.html" data-i18n="nav-perfil">Perfil</a></li>
     </ul>
-    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button">Sair</button>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button" data-i18n="nav-sair">Sair</button>
   </div>
 </nav>
 
   <div class="container">
     <div class="page-content">
       <div class="page-header fade-up">
-        <h2>Oferecer carona</h2>
-        <p>Publique sua carona e divida os custos do trajeto</p>
+        <h2 data-i18n="create-title">Oferecer carona</h2>
+        <p data-i18n="create-sub">Publique sua carona e divida os custos do trajeto</p>
       </div>
 
       <div class="card fade-up">
@@ -40,54 +40,54 @@
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Origem</label>
-            <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida">
+            <label class="form-label" data-i18n="label-origin">Origem</label>
+            <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida" data-i18n="label-origin">
           </div>
           <div class="form-group">
-            <label class="form-label">Destino</label>
-            <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
+            <label class="form-label" data-i18n="label-destination">Destino</label>
+            <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada" data-i18n="label-destination">
           </div>
         </div>
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Data e horário</label>
+            <label class="form-label" data-i18n="label-datetime">Data e horário</label>
             <input class="form-control" id="horario" type="datetime-local">
           </div>
           <div class="form-group">
-            <label class="form-label">Vagas disponíveis</label>
+            <label class="form-label" data-i18n="label-vagas">Vagas disponíveis</label>
             <input class="form-control" id="vagas" type="number" min="1" max="6" value="3">
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Distância estimada (km)</label>
+          <label class="form-label" data-i18n="card-dist">Distância estimada (km)</label>
           <input class="form-control" id="distancia" type="number" min="0" step="0.5"
             placeholder="Ex: 25" oninput="atualizarSugestao()">
           <span class="calc-note">valor_sugerido = distância × R$ 0,30 / km</span>
         </div>
 
         <div class="price-suggestion" id="sugestao-box" style="display:none">
-          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem">Valor sugerido pela plataforma</div>
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem" data-i18n="btn-filter">Valor sugerido pela plataforma</div>
           <div class="suggested-value" id="sugestao-valor">R$ 0,00</div>
-          <p>Baseado na distância informada. Você pode alterar abaixo.</p>
+          <p data-i18n="create-sub">Baseado na distância informada. Você pode alterar abaixo.</p>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Valor cobrado por passageiro</label>
+          <label class="form-label" data-i18n="label-value">Valor cobrado por passageiro</label>
           <input class="form-control" id="valor" type="number" min="0" step="0.50" placeholder="0,00">
-          <span class="form-hint">Você pode aceitar a sugestão ou definir outro valor</span>
+          <span class="form-hint" data-i18n="btn-publish">Você pode aceitar a sugestão ou definir outro valor</span>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Observações <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <label class="form-label"><span data-i18n="label-obs">Observações</span> <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
           <textarea class="form-control" id="observacoes" rows="2"
-            placeholder="Ponto de encontro, desvio aceito, bagagem..."></textarea>
+            placeholder="Ponto de encontro, desvio aceito, bagagem..." data-i18n="label-obs"></textarea>
         </div>
 
         <div class="divider"></div>
 
-        <button class="btn btn-success btn-full" onclick="publicarCarona()" id="btn-pub">
+        <button class="btn btn-success btn-full" onclick="publicarCarona()" id="btn-pub" data-i18n="btn-publish">
           Publicar carona
         </button>
       </div>
@@ -95,6 +95,7 @@
   </div>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     protegerRota();
     const agora = new Date();
@@ -125,19 +126,19 @@
       };
 
       if (!dados.origem || !dados.destino || !dados.horario_partida || !dados.valor_cobrado) {
-        return showAlert('Preencha origem, destino, horário e valor', 'error');
+        return showAlert(currentLang === 'pt' ? 'Preencha origem, destino, horário e valor' : 'Fill in origin, destination, time and value', 'error');
       }
 
       const btn = document.getElementById('btn-pub');
-      btn.disabled = true; btn.textContent = 'Publicando...';
+      btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Publicando...' : 'Publishing...';
 
       try {
         const res = await api.criarCarona(dados);
-        showAlert('Carona publicada com sucesso!', 'success');
+        showAlert(currentLang === 'pt' ? 'Carona publicada com sucesso!' : 'Ride published successfully!', 'success');
         setTimeout(() => window.location.href = `carona.html?id=${res.data.id}`, 1500);
       } catch(err) {
         showAlert(err.message, 'error');
-        btn.disabled = false; btn.textContent = 'Publicar carona';
+        btn.disabled = false; btn.textContent = t('btn-publish');
       }
     }
     

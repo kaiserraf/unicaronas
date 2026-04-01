@@ -160,10 +160,18 @@ const buscarPorId = async (req, res, next) => {
 const atualizarPerfil = async (req, res, next) => {
   try {
     const id = req.usuario.id;
-    const { nome, telefone, curso, foto_url } = req.body;
+    const { nome, telefone, curso } = req.body;
+    let { foto_url } = req.body;
 
-    // Valida URL da foto se fornecida
-    if (foto_url) {
+    // Se houver arquivo enviado, gera a URL local
+    if (req.file) {
+      // O host deve vir de uma variável de ambiente ou ser inferido
+      const baseUrl = process.env.API_URL || `${req.protocol}://${req.get('host')}`;
+      foto_url = `${baseUrl}/uploads/profiles/${req.file.filename}`;
+    }
+
+    // Valida URL da foto se fornecida via texto (fallback ou se mantido o campo)
+    if (foto_url && !req.file) {
       try {
         const url = new URL(foto_url);
         if (!['http:', 'https:'].includes(url.protocol)) {

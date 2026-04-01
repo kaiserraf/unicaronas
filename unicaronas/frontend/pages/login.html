@@ -92,32 +92,33 @@
   <!-- Form -->
   <div class="login-form-panel">
     <div class="login-box fade-up">
-      <div class="login-title">Bem-vindo de volta</div>
-      <p class="login-subtitle">Acesse sua conta para continuar</p>
+      <div class="login-title" data-i18n="login-title">Bem-vindo de volta</div>
+      <p class="login-subtitle" data-i18n="login-sub">Acesse sua conta para continuar</p>
 
       <div id="alert-container"></div>
 
       <div class="form-group">
-        <label class="form-label">E-mail institucional</label>
+        <label class="form-label" data-i18n="label-email">E-mail institucional</label>
         <input class="form-control" type="email" id="email" placeholder="seu@universidade.edu.br" autocomplete="email">
       </div>
 
       <div class="form-group">
-        <label class="form-label">Senha</label>
+        <label class="form-label" data-i18n="label-password">Senha</label>
         <input class="form-control" type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
       </div>
 
-      <button class="btn btn-primary btn-full mt-2" onclick="fazerLogin()" id="btn-login">
+      <button class="btn btn-primary btn-full mt-2" onclick="fazerLogin()" id="btn-login" data-i18n="btn-login">
         Entrar
       </button>
 
       <p class="text-center text-muted mt-2" style="font-size:.85rem">
-        Ainda não tem conta? <a href="cadastro.html">Criar conta</a>
+        <span data-i18n="login-no-account">Não tem uma conta?</span> <a href="cadastro.html" data-i18n="login-create-account">Criar conta</a>
       </p>
     </div>
   </div>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     if (isLogado()) window.location.href = 'dashboard.html';
 
@@ -126,10 +127,10 @@
       const senha = document.getElementById('senha').value;
       const btn   = document.getElementById('btn-login');
 
-      if (!email || !senha) return showAlert('Preencha todos os campos', 'error');
+      if (!email || !senha) return showAlert(currentLang === 'pt' ? 'Preencha todos os campos' : 'Fill in all fields', 'error');
 
       btn.disabled = true;
-      btn.textContent = 'Entrando...';
+      btn.textContent = currentLang === 'pt' ? 'Entrando...' : 'Logging in...';
 
       try {
         const res = await api.login({ email, senha });
@@ -139,7 +140,7 @@
       } catch (err) {
         showAlert(err.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Entrar';
+        btn.textContent = t('btn-login');
       }
     }
 
