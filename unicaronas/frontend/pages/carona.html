@@ -30,6 +30,42 @@
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none; }
     .modal-box { background: var(--surface); padding: 2rem; border-radius: var(--radius-lg); width: 100%; max-width: 400px; }
 
+    /* Botão de chat com pulso */
+    .btn-chat-iniciar {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--green-dim); color: var(--green);
+      border: 1px solid rgba(34,211,160,.25);
+      padding: .55rem 1.1rem; border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: .85rem; font-weight: 600;
+      cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-chat-iniciar:hover {
+      background: rgba(34,211,160,.18);
+      border-color: rgba(34,211,160,.45);
+      transform: translateY(-1px);
+    }
+    .btn-chat-iniciar:active { transform: scale(.97); }
+    .btn-chat-iniciar svg { flex-shrink: 0; }
+
+    /* Badge "chat disponível" */
+    .chat-disponivel-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--green);
+      background: var(--green-dim); border: 1px solid rgba(34,211,160,.2);
+      border-radius: 99px; padding: .2rem .65rem;
+    }
+    .chat-disponivel-badge::before {
+      content: ''; display: block;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse-green 1.8s infinite;
+    }
+    @keyframes pulse-green {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .35; }
+    }
+
     @media(max-width:860px){ .detalhe-layout{ grid-template-columns:1fr; } }
   </style>
 </head>
@@ -87,11 +123,13 @@
 
   <script src="../js/api.js"></script>
   <script src="../js/i18n.js"></script>
+  <script src="../js/chat-global.js"></script>
   <script>
     protegerRota();
     const usuario      = getUser();
     const id           = new URLSearchParams(location.search).get('id');
-    let   solicitacaoId = null; // Para o passageiro
+    let   solicitacaoId = null;
+    let   caronaCache   = null; // cache da carona para usar no botão de chat
     let   chatInterval  = null;
     let   avaliandoId   = null;
     let   avaliandoSolId = null;
@@ -106,15 +144,29 @@
       try {
         const res  = await api.buscarCarona(id);
         const c    = res.data;
+        caronaCache = c;
         const sou_motorista = c.motorista_id === usuario?.id;
 
-        // Se for passageiro, busca sua solicitação
         let minhaSol = null;
         if (!sou_motorista) {
           const resSol = await api.minhaSolicitacao(id);
           minhaSol = resSol.data;
           solicitacaoId = minhaSol?.id;
         }
+
+        // Monta botão de chat para passageiro com vaga aceita
+        const chatPassageiroHtml = (!sou_motorista && minhaSol?.status === 'aceita') ? `
+          <div style="margin-top:.75rem">
+            <span class="chat-disponivel-badge">Chat disponível</span>
+            <div style="margin-top:.65rem">
+              <button class="btn-chat-iniciar btn-full" onclick="abrirChatPassageiro(${minhaSol.id}, '${esc(c.origem)}', '${esc(c.destino)}', '${esc(c.motorista_nome)}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Iniciar conversa com motorista
+              </button>
+            </div>
+          </div>` : '';
 
         document.getElementById('conteudo').innerHTML = `
           <div class="detalhe-layout">
@@ -160,7 +212,8 @@
                 <div style="margin-top:1.5rem">
                   <span class="badge badge-green">${currentLang === 'pt' ? 'Vaga confirmada' : 'Seat confirmed'}</span>
                   <button class="btn btn-primary btn-full mt-1" onclick="abrirModal(${c.motorista_id}, ${minhaSol.id})">${currentLang === 'pt' ? 'Avaliar Motorista' : 'Rate Driver'}</button>
-                </div>` : ''}
+                </div>
+                ${chatPassageiroHtml}` : ''}
 
                 ${!sou_motorista && minhaSol?.status === 'pendente' ? `
                 <div style="margin-top:1.5rem"><span class="badge badge-accent">${currentLang === 'pt' ? 'Aguardando resposta' : 'Waiting for response'}</span></div>` : ''}
@@ -173,29 +226,32 @@
                 ${sou_motorista && c.status === 'concluida' ? `
                 <div style="margin-top:1.5rem"><span class="badge badge-green">${currentLang === 'pt' ? 'Viagem finalizada' : 'Trip finished'}</span></div>` : ''}
               </div>
-              <div id="chat-box" class="card fade-up" style="display:none;padding:1.25rem">
-                <div class="card-title">${currentLang === 'pt' ? 'Conversa' : 'Chat'}</div>
-                <div class="chat-wrap" style="height:360px">
-                  <div class="chat-messages" id="chat-msgs"></div>
-                  <div class="chat-input">
-                    <input class="form-control" id="chat-texto" type="text" placeholder="${currentLang === 'pt' ? 'Digite uma mensagem...' : 'Type a message...'}">
-                    <button class="btn btn-primary btn-sm" onclick="enviarMensagem()">${currentLang === 'pt' ? 'Enviar' : 'Send'}</button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>`;
 
         if (sou_motorista) {
           document.getElementById('area-motorista').style.display = 'block';
           carregarSolicitacoes();
-        } else if (minhaSol?.status === 'aceita') {
-          iniciarChat();
         }
 
       } catch(err) {
         document.getElementById('conteudo').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
       }
+    }
+
+    // Escapa aspas simples para uso inline em onclick
+    function esc(str) {
+      return String(str || '').replace(/'/g, "\\'");
+    }
+
+    // Passageiro abre chat com motorista
+    function abrirChatPassageiro(solId, origem, destino, motoristaNome) {
+      const titulo = `${origem.split(',')[0]} → ${destino.split(',')[0]}`;
+      UCChat.iniciarChat(solId, {
+        titulo,
+        outraPessoa: motoristaNome,
+        subtitulo: `Motorista: ${motoristaNome}`,
+      });
     }
 
     async function solicitar() {
@@ -247,6 +303,7 @@
 
     async function carregarSolicitacoes() {
       const container = document.getElementById('lista-solicitacoes');
+      const c = caronaCache;
       try {
         const res = await api.solicitacoesCarona(id);
         const solicitacoes = res.data;
@@ -256,7 +313,17 @@
           return;
         }
       
-        container.innerHTML = solicitacoes.map(s => `
+        container.innerHTML = solicitacoes.map(s => {
+          // Botão de chat: só exibe se solicitação já está aceita
+          const chatBtn = s.status === 'aceita' ? `
+            <button class="btn-chat-iniciar" onclick="abrirChatMotorista(${s.id}, '${esc(s.passageiro_nome)}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Chat
+            </button>` : '';
+
+          return `
           <div class="card mb-2">
             <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
               <div class="user-row">
@@ -266,61 +333,71 @@
                   <div class="user-rating">${s.passageiro_curso || (currentLang === 'pt' ? 'Curso não informado' : 'Course not informed')} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
                 </div>
               </div>
-              <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
+              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-left:auto">
                 ${s.status === 'pendente' ? `
-                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita')">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
-                  <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada')">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
+                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', '${esc(s.passageiro_nome)}')">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
+                  <button class="btn btn-danger btn-sm"  onclick="responderRejeitar(${s.id})">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
                 ` : `
                   <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
+                  ${chatBtn}
                   ${s.status === 'aceita' ? `<button class="btn btn-primary btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">${currentLang === 'pt' ? 'Avaliar' : 'Rate'}</button>` : ''}
                 `}
               </div>
             </div>
-          </div>`).join('');
+          </div>`;
+        }).join('');
       } catch (err) {
         container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
       }
     }
 
-    async function responder(sid, status) {
+    // Motorista aceita e abre chat imediatamente
+    async function responder(sid, status, passageiroNome) {
       try {
         await api.responderSolicitacao(sid, status);
+
+        if (status === 'aceita' && caronaCache) {
+          carregarSolicitacoes();
+          carregarDados();
+
+          // Abre chat automaticamente após aceitar
+          const titulo = `${caronaCache.origem.split(',')[0]} → ${caronaCache.destino.split(',')[0]}`;
+          showAlert(
+            `Solicitação aceita! Você já pode conversar com ${passageiroNome}.`,
+            'success'
+          );
+          // Pequeno delay para o alert aparecer antes do chat abrir
+          setTimeout(() => {
+            UCChat.iniciarChat(sid, {
+              titulo,
+              outraPessoa: passageiroNome,
+              subtitulo: `Passageiro: ${passageiroNome}`,
+            });
+          }, 600);
+        } else {
+          carregarSolicitacoes();
+          carregarDados();
+        }
+      } catch (err) { showAlert(err.message, 'error'); }
+    }
+
+    async function responderRejeitar(sid) {
+      try {
+        await api.responderSolicitacao(sid, 'recusada');
         carregarSolicitacoes();
         carregarDados();
       } catch (err) { showAlert(err.message, 'error'); }
     }
 
-    function iniciarChat() {
-      if (chatInterval) return;
-      document.getElementById('chat-box').style.display = 'block';
-      carregarMensagens();
-      chatInterval = setInterval(carregarMensagens, 5000);
-    }
-
-    async function carregarMensagens() {
-      if (!solicitacaoId) return;
-      try {
-        const res  = await api.listarMensagens(solicitacaoId);
-        const msgs = res.data;
-        const el   = document.getElementById('chat-msgs');
-        el.innerHTML = msgs.map(m => {
-          const minha = m.remetente_id === usuario?.id;
-          return `<div class="mensagem ${minha?'minha':''}">
-            <div class="mensagem-bubble">${m.conteudo}</div>
-          </div>`;
-        }).join('');
-        el.scrollTop = el.scrollHeight;
-      } catch(_) {}
-    }
-
-    async function enviarMensagem() {
-      const txt = document.getElementById('chat-texto').value.trim();
-      if (!txt || !solicitacaoId) return;
-      try {
-        await api.enviarMensagem({ solicitacao_id: solicitacaoId, conteudo: txt });
-        document.getElementById('chat-texto').value = '';
-        carregarMensagens();
-      } catch(err) { showAlert(err.message, 'error'); }
+    // Motorista abre chat com um passageiro já aceito
+    function abrirChatMotorista(solId, passageiroNome) {
+      if (!caronaCache) return;
+      const titulo = `${caronaCache.origem.split(',')[0]} → ${caronaCache.destino.split(',')[0]}`;
+      UCChat.iniciarChat(solId, {
+        titulo,
+        outraPessoa: passageiroNome,
+        subtitulo: `Passageiro: ${passageiroNome}`,
+      });
     }
 
     carregarDados();

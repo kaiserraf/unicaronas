@@ -17,6 +17,30 @@
       width: 32px; height: 3px; background: var(--accent);
       border-radius: 99px; margin-bottom: .6rem;
     }
+
+    /* Botão de chat inline */
+    .btn-chat-iniciar {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: var(--green-dim); color: var(--green);
+      border: 1px solid rgba(34,211,160,.25);
+      padding: .38rem .85rem; border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: .8rem; font-weight: 600;
+      cursor: pointer; transition: all .18s; white-space: nowrap;
+    }
+    .btn-chat-iniciar:hover {
+      background: rgba(34,211,160,.2);
+      border-color: rgba(34,211,160,.45);
+    }
+    .btn-chat-iniciar:active { transform: scale(.96); }
+    .btn-chat-iniciar svg { flex-shrink: 0; }
+
+    /* Animação de entrada após aceitar */
+    @keyframes aceito-flash {
+      0%   { background: rgba(34,211,160,.12); }
+      100% { background: transparent; }
+    }
+    .sol-aceita-flash { animation: aceito-flash 1.2s ease; }
+
     @media(max-width:600px){ .stats-grid{grid-template-columns:1fr 1fr;} .actions-bar{flex-direction:column;} }
   </style>
 </head>
@@ -74,29 +98,29 @@
 
   <script src="../js/api.js"></script>
   <script src="../js/i18n.js"></script>
+  <script src="../js/chat-global.js"></script>
   <script>
     protegerRota();
     const usuario = getUser();
 
-    // Saudação dinâmica com suporte a i18n
+    // Mapa caronaId -> dados da carona (para usar no botão de chat)
+    const caronasMap = {};
+
     function atualizarSaudacao() {
       const hora = new Date().getHours();
       let key = 'welcome-evening';
       if (hora < 12) key = 'welcome-morning';
       else if (hora < 18) key = 'welcome-afternoon';
-      
       document.getElementById('boas-vindas').textContent =
         `${t(key)}, ${usuario?.nome?.split(' ')[0] || t('nav-perfil')}`;
     }
 
-    // Escuta mudança de idioma para atualizar saudações e outros elementos dinâmicos
     window.addEventListener('languageChanged', () => {
       atualizarSaudacao();
       carregarCaronas();
       carregarSolicitacoes();
     });
 
-    // Avaliação
     const av = parseFloat(usuario?.avaliacao_media || 0);
     document.getElementById('stat-avaliacao').textContent = av > 0 ? av.toFixed(1) : (currentLang === 'pt' ? 'Novo' : 'New');
 
@@ -144,6 +168,9 @@
         const res     = await api.listarCaronas();
         const caronas = res.data;
 
+        // Salva no mapa para usar depois no botão de chat
+        caronas.forEach(c => { caronasMap[c.id] = c; });
+
         document.getElementById('stat-caronas').textContent = caronas.length;
         document.getElementById('stat-minhas').textContent  =
           caronas.filter(c => c.motorista_id === usuario?.id).length;
@@ -171,6 +198,9 @@
           container.innerHTML = `<div class="empty-state"><p>${currentLang === 'pt' ? 'Você não tem caronas ativas.' : 'You have no active rides.'}</p></div>`;
           return;
         }
+
+        // Salva caronas do motorista no mapa também
+        res.data.forEach(c => { caronasMap[c.id] = c; });
       
         const resultados = await Promise.all(
           res.data.map(c =>
@@ -194,7 +224,7 @@
               </span>
             </div>
             ${solicitacoes.map(s => `
-              <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
+              <div class="info-row sol-row-${s.id}" style="flex-wrap:wrap;gap:.75rem">
                 <div class="user-row">
                   <div class="avatar">${iniciais(s.passageiro_nome)}</div>
                   <div>
@@ -204,13 +234,20 @@
                     </div>
                   </div>
                 </div>
-                <div style="display:flex;gap:.5rem;align-items:center;margin-left:auto">
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-left:auto">
                   ${s.status === 'pendente' ? `
                     <span class="badge badge-accent">${currentLang === 'pt' ? 'Pendente' : 'Pending'}</span>
-                    <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', this)">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
-                    <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada', this)">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
+                    <button class="btn btn-success btn-sm" onclick="aceitarSolicitacao(${s.id}, '${escJs(s.passageiro_nome)}', ${carona.id}, this)">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
+                    <button class="btn btn-danger btn-sm"  onclick="recusarSolicitacao(${s.id}, this)">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
                   ` : `
                     <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
+                    ${s.status === 'aceita' ? `
+                      <button class="btn-chat-iniciar" onclick="abrirChatDashboard(${s.id}, '${escJs(s.passageiro_nome)}', ${carona.id})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Chat
+                      </button>` : ''}
                   `}
                 </div>
               </div>
@@ -223,14 +260,48 @@
       }
     }
 
-    atualizarSaudacao();
-    carregarCaronas();
-    carregarSolicitacoes();
-    
-    async function responder(solicitacaoId, status, btn) {
+    // Aceitar e abrir chat automaticamente
+    async function aceitarSolicitacao(solicitacaoId, passageiroNome, caronaId, btn) {
       btn.disabled = true;
       try {
-        await api.responderSolicitacao(solicitacaoId, status);
+        await api.responderSolicitacao(solicitacaoId, 'aceita');
+
+        // Flash visual na linha
+        const row = document.querySelector(`.sol-row-${solicitacaoId}`);
+        if (row) row.classList.add('sol-aceita-flash');
+
+        showAlert(
+          `✓ Solicitação de ${passageiroNome} aceita! Iniciando conversa...`,
+          'success'
+        );
+
+        // Recarrega a lista
+        carregarSolicitacoes();
+        carregarCaronas();
+
+        // Abre chat após pequeno delay (UX: usuário vê o feedback antes)
+        setTimeout(() => {
+          const carona = caronasMap[caronaId];
+          const titulo = carona
+            ? `${carona.origem.split(',')[0]} → ${carona.destino.split(',')[0]}`
+            : 'Carona';
+          UCChat.iniciarChat(solicitacaoId, {
+            titulo,
+            outraPessoa: passageiroNome,
+            subtitulo: `Passageiro: ${passageiroNome}`,
+          });
+        }, 700);
+
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false;
+      }
+    }
+
+    async function recusarSolicitacao(solicitacaoId, btn) {
+      btn.disabled = true;
+      try {
+        await api.responderSolicitacao(solicitacaoId, 'recusada');
         carregarSolicitacoes();
       } catch (err) {
         showAlert(err.message, 'error');
@@ -238,6 +309,28 @@
       }
     }
 
+    // Abrir chat para uma solicitação já aceita (botão "Chat" permanente)
+    function abrirChatDashboard(solicitacaoId, passageiroNome, caronaId) {
+      const carona = caronasMap[caronaId];
+      const titulo = carona
+        ? `${carona.origem.split(',')[0]} → ${carona.destino.split(',')[0]}`
+        : 'Carona';
+      UCChat.iniciarChat(solicitacaoId, {
+        titulo,
+        outraPessoa: passageiroNome,
+        subtitulo: `Passageiro: ${passageiroNome}`,
+      });
+    }
+
+    // Escape para uso em atributos onclick inline
+    function escJs(str) {
+      return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    atualizarSaudacao();
+    carregarCaronas();
+    carregarSolicitacoes();
+    
     document.getElementById('btn-logout')?.addEventListener('click', () => logout());
   </script>
 </body>
