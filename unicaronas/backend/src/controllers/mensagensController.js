@@ -83,4 +83,23 @@ const listar = async (req, res, next) => {
   }
 };
 
-module.exports = { enviar, listar };
+const contagemNaoLidas = async (req, res, next) => {
+  try {
+    const usuario_id = req.usuario.id;
+    const { rows } = await db.query(
+      `SELECT COUNT(*) as total 
+       FROM mensagens_chat m
+       JOIN solicitacoes_carona s ON s.id = m.solicitacao_id
+       JOIN caronas c ON c.id = s.carona_id
+       WHERE (s.passageiro_id = $1 OR c.motorista_id = $1)
+         AND m.remetente_id != $1 
+         AND m.lida = false`,
+      [usuario_id]
+    );
+    res.json({ success: true, count: parseInt(rows[0].total) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { enviar, listar, contagemNaoLidas };

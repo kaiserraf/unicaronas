@@ -90,6 +90,7 @@ const api = {
 
   enviarMensagem:      (body) => request('/mensagens', { method: 'POST', body: JSON.stringify(body) }),
   listarMensagens:     (sid)  => request(`/mensagens/${sid}`),
+  contagemNaoLidas:    ()     => request('/mensagens/nao-lidas'),
 
   pagar:               (body) => request('/pagamentos', { method: 'POST', body: JSON.stringify(body) }),
   historicoPagamentos: ()     => request('/pagamentos/historico'),
@@ -97,6 +98,24 @@ const api = {
   avaliar:    (body) => request('/avaliacoes', { method: 'POST', body: JSON.stringify(body) }),
   avaliacoes: (uid)  => request(`/avaliacoes/${uid}`),
 };
+
+// Polling global para badge de mensagens não lidas
+if (isLogado()) {
+  setInterval(async () => {
+    try {
+      const res = await api.contagemNaoLidas();
+      const badge = document.getElementById('nav-chat-badge');
+      if (badge) {
+        if (res.count > 0) {
+          badge.textContent = res.count;
+          badge.style.display = 'block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    } catch (e) {}
+  }, 10000);
+}
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 

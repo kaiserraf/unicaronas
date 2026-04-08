@@ -130,9 +130,8 @@
     const id           = new URLSearchParams(location.search).get('id');
     let   solicitacaoId = null;
     let   caronaCache   = null; // cache da carona para usar no botão de chat
-    let   chatInterval  = null;
-    let   avaliandoId   = null;
-    let   avaliandoSolId = null;
+    let   pollingChatLateral = null;
+    let   ultimaMensagemId   = 0;
 
     if (!id) location.href = 'buscar.html';
 
@@ -154,21 +153,22 @@
           solicitacaoId = minhaSol?.id;
         }
 
-        // Monta botão de chat para passageiro com vaga aceita
-        const chatPassageiroHtml = (!sou_motorista && minhaSol?.status === 'aceita') ? `
-          <div style="margin-top:.75rem">
-            <span class="chat-disponivel-badge">Chat disponível</span>
-            <div style="margin-top:.65rem">
-              <button class="btn-chat-iniciar btn-full" onclick="abrirChatPassageiro(${minhaSol.id}, '${esc(c.origem)}', '${esc(c.destino)}', '${esc(c.motorista_nome)}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                Iniciar conversa com motorista
-              </button>
+        // Se a solicitação foi aceita, mostra o chat lateral (US08) e link de pagamento (US09)
+        const showChat = (sou_motorista) || (minhaSol?.status === 'aceita');
+        
+        const pagamentoHtml = (!sou_motorista && minhaSol?.status === 'aceita') ? `
+          <div class="card mb-2 fade-up" style="background: var(--green-dim); border: 1px solid rgba(34,211,160,.3)">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem">
+              <div>
+                <div style="font-weight:700; color:var(--green)">Vaga confirmada!</div>
+                <div style="font-size:0.85rem; color:var(--text-2)">Realize o pagamento para garantir sua vaga.</div>
+              </div>
+              <a href="pagamento.html?solicitacao_id=${minhaSol.id}&carona_id=${id}&valor=${c.valor_cobrado}" class="btn btn-success btn-sm">Pagar R$ ${c.valor_cobrado}</a>
             </div>
           </div>` : '';
 
         document.getElementById('conteudo').innerHTML = `
+          ${pagamentoHtml}
           <div class="detalhe-layout">
             <div>
               <div class="page-header" style="padding-top:1.5rem">
@@ -192,7 +192,7 @@
                   <div class="avatar avatar-lg">${iniciais(c.motorista_nome)}</div>
                   <div>
                     <div style="font-size:1.05rem;font-weight:700">${c.motorista_nome}</div>
-                    <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} ${currentLang === 'pt' ? 'de avaliação média' : 'average rating'}</div>
+                    <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} ★ ${currentLang === 'pt' ? 'de avaliação média' : 'average rating'}</div>
                     ${c.motorista_telefone ? `<div style="font-size:.82rem;color:var(--text-3);margin-top:.2rem">${c.motorista_telefone}</div>` : ''}
                   </div>
                 </div>
@@ -203,7 +203,7 @@
                 <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem">${t('card-price-per-person')}</div>
                 <div class="preco-destaque">${formatarMoeda(c.valor_cobrado)}</div>
                 
-                ${!sou_motorista && !minhaSol && c.status === 'ativa' ? `
+                ${!sou_motorista && !minhaSol && c.status === 'ativa' && c.vagas_disponiveis > 0 ? `
                 <div style="margin-top:1.5rem">
                   <button class="btn btn-success btn-full" onclick="solicitar()">${currentLang === 'pt' ? 'Solicitar vaga' : 'Request seat'}</button>
                 </div>` : ''}
@@ -212,8 +212,7 @@
                 <div style="margin-top:1.5rem">
                   <span class="badge badge-green">${currentLang === 'pt' ? 'Vaga confirmada' : 'Seat confirmed'}</span>
                   <button class="btn btn-primary btn-full mt-1" onclick="abrirModal(${c.motorista_id}, ${minhaSol.id})">${currentLang === 'pt' ? 'Avaliar Motorista' : 'Rate Driver'}</button>
-                </div>
-                ${chatPassageiroHtml}` : ''}
+                </div>` : ''}
 
                 ${!sou_motorista && minhaSol?.status === 'pendente' ? `
                 <div style="margin-top:1.5rem"><span class="badge badge-accent">${currentLang === 'pt' ? 'Aguardando resposta' : 'Waiting for response'}</span></div>` : ''}
@@ -226,6 +225,21 @@
                 ${sou_motorista && c.status === 'concluida' ? `
                 <div style="margin-top:1.5rem"><span class="badge badge-green">${currentLang === 'pt' ? 'Viagem finalizada' : 'Trip finished'}</span></div>` : ''}
               </div>
+
+              <!-- Chat Lateral (US08) -->
+              <div id="container-chat-lateral" style="display: ${showChat && !sou_motorista ? 'block' : 'none'}">
+                <div id="chat-lateral">
+                  <div class="chat-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Chat com Motorista
+                  </div>
+                  <div id="chat-msgs"></div>
+                  <div class="chat-input-area">
+                    <input type="text" id="input-chat-lateral" placeholder="Digite uma mensagem..." maxlength="500">
+                    <button class="btn btn-primary btn-sm" id="btn-enviar-lateral" onclick="enviarMensagemLateral()">Enviar</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>`;
 
@@ -234,26 +248,147 @@
           carregarSolicitacoes();
         }
 
+        if (!sou_motorista && minhaSol?.status === 'aceita') {
+          iniciarPollingChat(minhaSol.id);
+        }
+
       } catch(err) {
         document.getElementById('conteudo').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
       }
     }
 
-    // Escapa aspas simples para uso inline em onclick
-    function esc(str) {
-      return String(str || '').replace(/'/g, "\\'");
-    }
-
-    // Passageiro abre chat com motorista
-    function abrirChatPassageiro(solId, origem, destino, motoristaNome) {
-      const titulo = `${origem.split(',')[0]} → ${destino.split(',')[0]}`;
-      UCChat.iniciarChat(solId, {
-        titulo,
-        outraPessoa: motoristaNome,
-        subtitulo: `Motorista: ${motoristaNome}`,
+    // --- Lógica do Chat Lateral (US08) ---
+    function iniciarPollingChat(sid) {
+      if (pollingChatLateral) clearInterval(pollingChatLateral);
+      solicitacaoId = sid;
+      carregarMensagensLaterais();
+      pollingChatLateral = setInterval(carregarMensagensLaterais, 5000);
+      
+      // Enter para enviar
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.activeElement.id === 'input-chat-lateral') {
+          enviarMensagemLateral();
+        }
       });
     }
 
+    async function carregarMensagensLaterais() {
+      if (!solicitacaoId) return;
+      try {
+        const res = await api.listarMensagens(solicitacaoId);
+        const msgs = res.data;
+        const box = document.getElementById('chat-msgs');
+        if (!box) return;
+
+        box.innerHTML = msgs.map(m => {
+          const eu = m.remetente_id === usuario.id;
+          return `
+            <div class="msg-bubble ${eu ? 'msg-me' : 'msg-other'}">
+              ${!eu ? `<div class="msg-meta">${m.remetente_nome}</div>` : ''}
+              ${esc(m.conteudo)}
+            </div>
+          `;
+        }).join('');
+        
+        // Scroll para o fim apenas se houver novas mensagens
+        if (msgs.length > 0 && msgs[msgs.length - 1].id !== ultimaMensagemId) {
+          box.scrollTop = box.scrollHeight;
+          ultimaMensagemId = msgs[msgs.length - 1].id;
+        }
+      } catch (err) { console.error('Erro no chat lateral:', err); }
+    }
+
+    async function enviarMensagemLateral() {
+      const input = document.getElementById('input-chat-lateral');
+      const conteudo = input.value.trim();
+      if (!conteudo || !solicitacaoId) return;
+
+      input.value = '';
+      try {
+        await api.enviarMensagem({ solicitacao_id: solicitacaoId, conteudo });
+        carregarMensagensLaterais();
+      } catch (err) { showAlert(err.message, 'error'); }
+    }
+
+    // --- Lógica de Solicitações (US08b) ---
+    async function carregarSolicitacoes() {
+      const pendentesContainer = document.getElementById('lista-solicitacoes-pendentes');
+      const aceitasContainer = document.getElementById('lista-solicitacoes-aceitas');
+      
+      try {
+        const res = await api.solicitacoesCarona(id);
+        const solicitacoes = res.data;
+      
+        const pendentes = solicitacoes.filter(s => s.status === 'pendente');
+        const aceitas   = solicitacoes.filter(s => s.status === 'aceita');
+
+        pendentesContainer.innerHTML = pendentes.length === 0 
+          ? '<p class="text-muted">Nenhuma solicitação pendente.</p>'
+          : pendentes.map(s => `
+            <div class="card mb-2" style="border-left: 4px solid var(--amber)">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div class="user-row">
+                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                  <div>
+                    <div class="user-name">${s.passageiro_nome}</div>
+                    <div class="user-rating">${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
+                  </div>
+                </div>
+                <div style="display:flex; gap:0.5rem">
+                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita')">Aceitar</button>
+                  <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada')">Recusar</button>
+                </div>
+              </div>
+            </div>`).join('');
+
+        aceitasContainer.innerHTML = aceitas.length === 0
+          ? '<p class="text-muted">Nenhum passageiro confirmado ainda.</p>'
+          : aceitas.map(s => `
+            <div class="card mb-2" style="border-left: 4px solid var(--green)">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <div class="user-row">
+                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                  <div>
+                    <div class="user-name">${s.passageiro_nome}</div>
+                    <div class="user-rating">${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
+                  </div>
+                </div>
+                <div style="display:flex; gap:0.5rem; align-items:center">
+                  <button class="btn btn-primary btn-sm" onclick="abrirChatMotorista(${s.id}, '${esc(s.passageiro_nome)}')">Chat</button>
+                  <button class="btn btn-ghost btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">Avaliar</button>
+                </div>
+              </div>
+            </div>`).join('');
+
+      } catch (err) {
+        pendentesContainer.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    }
+
+    async function responder(sid, status) {
+      try {
+        await api.responderSolicitacao(sid, status);
+        showAlert(`Solicitação ${status === 'aceita' ? 'aceita' : 'recusada'}!`, 'success');
+        carregarDados(); // Recarrega para atualizar vagas e listas
+      } catch (err) { showAlert(err.message, 'error'); }
+    }
+
+    function abrirChatMotorista(sid, nome) {
+      // Motorista usa o chat global ou podemos abrir o lateral também. 
+      // Para seguir o requisito de "Chat lateral em carona.html", vamos abrir o lateral:
+      const container = document.getElementById('container-chat-lateral');
+      container.style.display = 'block';
+      document.querySelector('.chat-header').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Chat com ${nome}
+      `;
+      iniciarPollingChat(sid);
+      window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+    }
+
+    // --- Funções originais mantidas ---
+    function esc(str) { return String(str || '').replace(/'/g, "\\'"); }
+    
     async function solicitar() {
       try {
         await api.solicitarVaga(id);
@@ -296,108 +431,7 @@
         await api.avaliar(dados);
         showAlert(currentLang === 'pt' ? 'Avaliação enviada!' : 'Evaluation sent!', 'success');
         fecharModal();
-      } catch(err) {
-        showAlert(err.message, 'error');
-      }
-    }
-
-    async function carregarSolicitacoes() {
-      const container = document.getElementById('lista-solicitacoes');
-      const c = caronaCache;
-      try {
-        const res = await api.solicitacoesCarona(id);
-        const solicitacoes = res.data;
-      
-        if (solicitacoes.length === 0) {
-          container.innerHTML = `<div class="empty-state"><p>${currentLang === 'pt' ? 'Nenhuma solicitação até agora.' : 'No requests yet.'}</p></div>`;
-          return;
-        }
-      
-        container.innerHTML = solicitacoes.map(s => {
-          // Botão de chat: só exibe se solicitação já está aceita
-          const chatBtn = s.status === 'aceita' ? `
-            <button class="btn-chat-iniciar" onclick="abrirChatMotorista(${s.id}, '${esc(s.passageiro_nome)}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Chat
-            </button>` : '';
-
-          return `
-          <div class="card mb-2">
-            <div class="info-row" style="flex-wrap:wrap;gap:.75rem">
-              <div class="user-row">
-                <div class="avatar">${iniciais(s.passageiro_nome)}</div>
-                <div>
-                  <div class="user-name">${s.passageiro_nome}</div>
-                  <div class="user-rating">${s.passageiro_curso || (currentLang === 'pt' ? 'Curso não informado' : 'Course not informed')} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
-                </div>
-              </div>
-              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-left:auto">
-                ${s.status === 'pendente' ? `
-                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita', '${esc(s.passageiro_nome)}')">${currentLang === 'pt' ? 'Aceitar' : 'Accept'}</button>
-                  <button class="btn btn-danger btn-sm"  onclick="responderRejeitar(${s.id})">${currentLang === 'pt' ? 'Recusar' : 'Reject'}</button>
-                ` : `
-                  <span class="badge ${s.status === 'aceita' ? 'badge-green' : 'badge-red'}">${s.status}</span>
-                  ${chatBtn}
-                  ${s.status === 'aceita' ? `<button class="btn btn-primary btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">${currentLang === 'pt' ? 'Avaliar' : 'Rate'}</button>` : ''}
-                `}
-              </div>
-            </div>
-          </div>`;
-        }).join('');
-      } catch (err) {
-        container.innerHTML = `<div class="empty-state"><p>${err.message}</p></div>`;
-      }
-    }
-
-    // Motorista aceita e abre chat imediatamente
-    async function responder(sid, status, passageiroNome) {
-      try {
-        await api.responderSolicitacao(sid, status);
-
-        if (status === 'aceita' && caronaCache) {
-          carregarSolicitacoes();
-          carregarDados();
-
-          // Abre chat automaticamente após aceitar
-          const titulo = `${caronaCache.origem.split(',')[0]} → ${caronaCache.destino.split(',')[0]}`;
-          showAlert(
-            `Solicitação aceita! Você já pode conversar com ${passageiroNome}.`,
-            'success'
-          );
-          // Pequeno delay para o alert aparecer antes do chat abrir
-          setTimeout(() => {
-            UCChat.iniciarChat(sid, {
-              titulo,
-              outraPessoa: passageiroNome,
-              subtitulo: `Passageiro: ${passageiroNome}`,
-            });
-          }, 600);
-        } else {
-          carregarSolicitacoes();
-          carregarDados();
-        }
-      } catch (err) { showAlert(err.message, 'error'); }
-    }
-
-    async function responderRejeitar(sid) {
-      try {
-        await api.responderSolicitacao(sid, 'recusada');
-        carregarSolicitacoes();
-        carregarDados();
-      } catch (err) { showAlert(err.message, 'error'); }
-    }
-
-    // Motorista abre chat com um passageiro já aceito
-    function abrirChatMotorista(solId, passageiroNome) {
-      if (!caronaCache) return;
-      const titulo = `${caronaCache.origem.split(',')[0]} → ${caronaCache.destino.split(',')[0]}`;
-      UCChat.iniciarChat(solId, {
-        titulo,
-        outraPessoa: passageiroNome,
-        subtitulo: `Passageiro: ${passageiroNome}`,
-      });
+      } catch(err) { showAlert(err.message, 'error'); }
     }
 
     carregarDados();
