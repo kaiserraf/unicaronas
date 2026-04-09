@@ -78,6 +78,8 @@ const api = {
     ).toString();
     return request(`/caronas${qs ? '?' + qs : ''}`);
   },
+  solicitacoesPendentes: () => request('/caronas/solicitacoes/pendentes'),
+  historicoCaronas: (uid) => request(`/caronas/historico/${uid}`),
   solicitacoesCarona: (caronaId) => request(`/caronas/${caronaId}/solicitacoes`),
   criarCarona:          (body)       => request('/caronas', { method: 'POST', body: JSON.stringify(body) }),
   buscarCarona:         (id)         => request(`/caronas/${id}`),
@@ -99,7 +101,7 @@ const api = {
   avaliacoes: (uid)  => request(`/avaliacoes/${uid}`),
 };
 
-// Polling global para badge de mensagens não lidas
+// Polling global para badges
 if (isLogado()) {
   setInterval(async () => {
     try {
@@ -115,6 +117,21 @@ if (isLogado()) {
       }
     } catch (e) {}
   }, 10000);
+
+  setInterval(async () => {
+    try {
+      const res = await api.solicitacoesPendentes();
+      const badge = document.getElementById('nav-painel-badge');
+      if (badge) {
+        if (res.count > 0) {
+          badge.textContent = res.count;
+          badge.style.display = 'inline-flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    } catch (e) {}
+  }, 30000);
 }
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────

@@ -106,6 +106,42 @@ function cardAvaliacao(av) {
     </div>`;
 }
 
+// ── Histórico ────────────────────────────────────────────────────────────────
+
+function renderHistorico(lista) {
+  const container = document.getElementById('historico-lista');
+  const vazio     = document.getElementById('historico-vazio');
+  if (!container) return;
+
+  if (!lista || lista.length === 0) {
+    if (vazio) vazio.style.display = 'block';
+    container.innerHTML = '';
+    return;
+  }
+
+  if (vazio) vazio.style.display = 'none';
+  container.innerHTML = lista.map(c => `
+    <div class="info-row" style="padding: 1rem 0; border-bottom: 1px solid var(--border);">
+      <div>
+        <strong style="color: var(--text); display: block; margin-bottom: 2px;">
+          ${c.origem} <span style="color: var(--accent-2); margin: 0 4px;">→</span> ${c.destino}
+        </strong>
+        <small style="color: var(--text-3); font-family: var(--font-mono);">
+          ${formatarData(c.horario_partida)}
+        </small>
+      </div>
+      <div style="text-align: right;">
+        <span class="badge ${c.papel === 'motorista' ? 'badge-accent' : 'badge-green'}" style="margin-bottom: 4px;">
+          ${c.papel === 'motorista' ? (currentLang === 'pt' ? 'Motorista' : 'Driver') : (currentLang === 'pt' ? 'Passageiro' : 'Passenger')}
+        </span>
+        <div style="font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;">
+          ${formatarMoeda(c.valor_cobrado)}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 function initEdicao(u) {

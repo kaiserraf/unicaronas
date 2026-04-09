@@ -10,7 +10,7 @@ const criar = async (req, res, next) => {
   try {
     const {
       origem, destino, horario_partida, vagas_totais,
-      valor_cobrado, distancia_km, observacoes,
+      valor_cobrado, distancia_km, observacoes, recorrente
     } = req.body;
     const motorista_id = req.usuario.id;
 
@@ -30,8 +30,8 @@ const criar = async (req, res, next) => {
     const { rows } = await db.query(
       `INSERT INTO caronas
          (motorista_id, origem, destino, horario_partida, vagas_totais, vagas_disponiveis,
-          valor_sugerido, valor_cobrado, distancia_km, observacoes)
-       VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9)
+          valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
+       VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         motorista_id,
@@ -43,8 +43,22 @@ const criar = async (req, res, next) => {
         valor,
         distancia,
         observacoes?.trim() || null,
+        !!recorrente
       ]
     );
+
+    if (recorrente) {
+      for (let i = 1; i <= 3; i++) {
+        const novaData = new Date(horario);
+        novaData.setDate(novaData.getDate() + (i * 7));
+        await db.query(
+          `INSERT INTO caronas (motorista_id, origem, destino, horario_partida, vagas_totais, 
+           vagas_disponiveis, valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
+           VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, true)`,
+          [motorista_id, origem.trim(), destino.trim(), novaData.toISOString(), vagas, valor_sugerido, valor, distancia, observacoes?.trim() || null]
+        );
+      }
+    }
 
     res.status(201).json({ success: true, data: rows[0] });
   } catch (err) {
@@ -54,11 +68,11 @@ const criar = async (req, res, next) => {
 
 /**
  * GET /api/caronas
- * Suporta filtros: origem, destino, data, motorista_id
+ * Suporta filtros: origem, destino, data, motorista_id, preco_max
  */
 const listar = async (req, res, next) => {
   try {
-    const { origem, destino, data, motorista_id } = req.query;
+    const { origem, destino, data, motorista_id, preco_max } = req.query;
 
     // motorista_id deve ser inteiro se fornecido
     if (motorista_id !== undefined && (isNaN(Number(motorista_id)) || Number(motorista_id) <= 0)) {
@@ -92,6 +106,10 @@ const listar = async (req, res, next) => {
     if (motorista_id) {
       query += ` AND c.motorista_id = $${idx++}`;
       params.push(parseInt(motorista_id, 10));
+    }
+    if (preco_max) {
+      query += ` AND c.valor_cobrado <= $${idx++}`;
+      params.push(parseFloat(preco_max));
     }
 
     query += ' ORDER BY c.horario_partida ASC LIMIT 200';
@@ -318,4 +336,47 @@ const minhaSolicitacao = async (req, res, next) => {
   }
 };
 
-module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes, concluir, minhaSolicitacao };
+/**
+ * GET /api/caronas/solicitacoes/pendentes
+ * Retorna o COUNT de solicitações com status 'pendente' nas caronas do motorista logado.
+ */
+const solicitacoesPendentes = async (req, res, next) => {
+  try {
+    const motorista_id = req.usuario.id;
+    const { rows } = await db.query(
+      `SELECT COUNT(s.id)::int as count
+       FROM solicitacoes_carona s
+       JOIN caronas c ON c.id = s.carona_id
+       WHERE c.motorista_id = $1 AND s.status = 'pendente'`,
+      [motorista_id]
+    );
+    res.json({ success: true, count: rows[0].count });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/caronas/historico/:usuario_id
+ * Retorna o histórico de caronas concluídas do usuário.
+ */
+const historico = async (req, res, next) => {
+  try {
+    const usuario_id = parseInt(req.params.usuario_id, 10);
+    const { rows } = await db.query(
+      `SELECT c.*, 'motorista' as papel FROM caronas c
+       WHERE c.motorista_id = $1 AND c.status = 'concluida'
+       UNION ALL
+       SELECT c.*, 'passageiro' as papel FROM caronas c
+       JOIN solicitacoes_carona s ON s.carona_id = c.id
+       WHERE s.passageiro_id = $1 AND s.status = 'aceita' AND c.status = 'concluida'
+       ORDER BY horario_partida DESC`,
+      [usuario_id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes, concluir, minhaSolicitacao, solicitacoesPendentes, historico };

@@ -16,6 +16,8 @@ const schemaResponder = {
 };
 
 router.get('/',                       ctrl.listar);
+router.get('/solicitacoes/pendentes', auth, ctrl.solicitacoesPendentes);
+router.get('/historico/:usuario_id', auth, ctrl.historico);
 router.post('/',        auth, validar(schemaCriar),     ctrl.criar);
 router.get('/:id',                    ctrl.buscarPorId);
 router.get('/:id/solicitacoes', auth,  ctrl.listarSolicitacoes);

@@ -4,14 +4,33 @@ Sistema web de caronas universitárias — conecta estudantes da mesma institui�
 
 ---
 
+## Funcionalidades
+
+- **Autenticação Segura**: Login e cadastro com validação de e-mail institucional.
+- **Dashboard Inteligente**: Visão geral com estatísticas de caronas disponíveis, viagens agendadas e avaliação média.
+- **Busca Avançada**: Filtros por origem, destino, data e preço máximo.
+- **Criação de Carona**: Sugestão automática de preço baseada na distância (R$ 0,30/km) e suporte a **caronas recorrentes** (semanais).
+- **Mapa Interativo**: Visualização do trajeto com marcadores de origem e destino via Leaflet.js.
+- **Gestão de Vagas**: Sistema de solicitação com aprovação ou recusa pelo motorista e atualização automática de vagas.
+- **Chat em Tempo Real**: Conversa integrada entre motorista e passageiro para combinar detalhes.
+- **Pagamentos Flexíveis**: Suporte a PIX, Cartão e Dinheiro com cálculo automático de taxa da plataforma (10%).
+- **Perfil do Usuário**: Upload de foto, histórico de viagens concluídas e sistema de avaliações com estrelas.
+- **Internacionalização**: Suporte completo a Português (PT), Inglês (EN) e Espanhol (ES).
+- **Design Responsivo**: Interface moderna e otimizada para dispositivos móveis e desktop.
+
+---
+
 ## Tecnologias
 
-| Camada | Tecnologia |
-|--------|------------|
-| Frontend | HTML5, CSS3, JavaScript |
-| Backend | Node.js + Express |
-| Banco de dados | PostgreSQL |
-| Autenticação | JWT |
+| Camada | Tecnologia | Versão |
+|--------|------------|--------|
+| Frontend | HTML5, CSS3, JavaScript Vanilla | — |
+| Backend | Node.js | ^18.0.0 |
+| Framework Web | Express | ^4.19.2 |
+| Banco de Dados | PostgreSQL | ^14.0.0 |
+| Autenticação | JSON Web Token (JWT) | ^9.0.2 |
+| Mapas | Leaflet.js | 1.9.4 |
+| Estilização | Google Fonts (DM Sans, DM Mono) | — |
 
 ---
 
@@ -35,23 +54,13 @@ git clone https://github.com/seu-usuario/unicaronas.git
 cd unicaronas
 ```
 
----
-
 ### 2. Criar o banco de dados
 
-Abra o terminal e execute:
+Execute no terminal:
 
 ```bash
 psql -U postgres -c "CREATE DATABASE unicaronas;"
 ```
-
-Se o `psql` não for reconhecido no Windows, use o caminho completo:
-
-```powershell
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE unicaronas;"
-```
-
-> Substitua `17` pelo número da versão do PostgreSQL instalada na sua máquina. Para descobrir, abra o pgAdmin ou verifique em `C:\Program Files\PostgreSQL\`.
 
 Depois crie as tabelas e insira os dados de teste:
 
@@ -66,80 +75,42 @@ psql -U postgres -d unicaronas -f schema.sql
 psql -U postgres -d unicaronas -f data.sql
 ```
 
----
-
 ### 3. Configurar as variáveis de ambiente
 
-Entre na pasta do backend e copie o arquivo de exemplo:
+Crie o arquivo `.env` na pasta `backend`:
 
 ```bash
-cd unicaronas/backend
+cd ../backend
 cp .env.example .env
 ```
 
-Abra o arquivo `.env` e preencha com suas informações:
+Edite o `.env` com suas credenciais:
 
-```env
-PORT=3000
+| Variável | Descrição | Exemplo |
+|----------|-----------|---------|
+| `PORT` | Porta do servidor | `3000` |
+| `NODE_ENV` | Ambiente de execução | `development` |
+| `DB_HOST` | Host do banco | `localhost` |
+| `DB_PORT` | Porta do banco | `5432` |
+| `DB_NAME` | Nome do banco | `unicaronas` |
+| `DB_USER` | Usuário do banco | `postgres` |
+| `DB_PASSWORD` | Senha do banco | `suasenha` |
+| `JWT_SECRET` | Segredo para o token | `texto_secreto_aqui` |
+| `FRONTEND_URL` | URL do Live Server | `http://localhost:5500` |
+| `EMAIL_DOMINIOS`| Domínios permitidos | `@uni.edu.br,@universidade.edu.br` |
+| `CUSTO_POR_KM` | Valor base da carona | `0.30` |
+| `TAXA_PLATAFORMA_PERCENT` | Taxa do sistema | `10` |
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=unicaronas
-DB_USER=postgres
-DB_PASSWORD=sua_senha_do_postgres_aqui
-
-JWT_SECRET=qualquer_texto_longo_e_secreto_aqui
-
-FRONTEND_URL=http://127.0.0.1:5500
-
-EMAIL_DOMINIOS=@seudominio.edu.br
-```
-
-> Em `EMAIL_DOMINIOS`, coloque o domínio do e-mail da sua universidade. Para aceitar mais de um, separe por vírgula: `@uni.edu.br,@universidade.com.br`
-
----
-
-### 4. Instalar dependências e iniciar o backend
-
-Ainda dentro da pasta `backend`:
+### 4. Iniciar o Backend
 
 ```bash
 npm install
 npm run dev
 ```
 
-Se tudo estiver certo, você verá no terminal:
+### 5. Iniciar o Frontend
 
-```
-UniCaronas API rodando em http://localhost:3000
-Conectado ao PostgreSQL
-```
-
-Para confirmar que a API está no ar, acesse no navegador:
-
-```
-http://localhost:3000/health
-```
-
-Deve retornar `{"status":"ok", ...}`.
-
-> Para parar o servidor: `Ctrl + C`
-
----
-
-### 5. Abrir o frontend
-
-Com o backend rodando, abra o VSCode e clique com o botão direito no arquivo:
-
-```
-unicaronas/frontend/pages/login.html
-```
-
-Selecione **"Open with Live Server"**.
-
-O navegador vai abrir em `http://127.0.0.1:5500/...` com a tela de login.
-
-> Não abra o arquivo HTML diretamente pelo explorador de arquivos. Use sempre o Live Server para evitar erros de CORS.
+Com o backend rodando, abra o VSCode e execute o arquivo `frontend/pages/login.html` com o **Live Server**.
 
 ---
 
@@ -149,36 +120,34 @@ O navegador vai abrir em `http://127.0.0.1:5500/...` com a tela de login.
 unicaronas/
 ├── backend/
 │   ├── config/
-│   │   └── database.js          # Conexão com o PostgreSQL
+│   │   └── database.js          # Configuração do Pool do PostgreSQL
 │   ├── src/
-│   │   ├── controllers/         # Lógica de cada funcionalidade
-│   │   ├── middleware/          # Autenticação JWT, tratamento de erros
-│   │   ├── routes/              # Definição das rotas da API
-│   │   └── utils/               # Algoritmo de sugestão de preço
-│   ├── .env                     # Variáveis de ambiente (não subir no Git)
-│   ├── .env.example             # Modelo do .env
-│   ├── package.json
-│   └── server.js                # Ponto de entrada do servidor
+│   │   ├── controllers/         # Lógica de negócio (Caronas, Usuários, etc)
+│   │   ├── middleware/          # Auth JWT, Upload (Multer), Validação
+│   │   ├── routes/              # Definição dos endpoints da API
+│   │   └── utils/               # Utilitário de precificação por distância
+│   ├── uploads/                 # Armazenamento de fotos de perfil
+│   ├── server.js                # Ponto de entrada (Express + Middlewares)
+│   └── package.json             # Dependências e scripts (start, dev)
 ├── database/
-│   ├── schema.sql               # Criação das tabelas
-│   └── data.sql                 # Dados de teste
-├── docs/
-│   ├── requirements/            # Script 0, user stories, backlog
-│   ├── design/                  # Arquitetura, modelo de dados, telas
-│   ├── reports/                 # Relatórios de sprint
-│   └── presentations/           # Roteiro de apresentação
+│   ├── schema.sql               # Estrutura das tabelas e triggers
+│   └── data.sql                 # Dados de semente para teste
+├── docs/                        # Documentação técnica e de requisitos
 ├── frontend/
 │   ├── css/
-│   │   └── style.css            # Estilos globais
+│   │   └── style.css            # Design System, Layout Desktop e Mobile
 │   ├── js/
-│   │   └── api.js               # Comunicação com a API
-│   └── pages/
-│       ├── login.html
-│       ├── cadastro.html
-│       ├── dashboard.html
-│       ├── buscar.html
-│       ├── criar-carona.html
-│       └── carona.html
+│   │   ├── api.js               # Cliente de API e polling de notificações
+│   │   ├── chat-global.js       # Widget de chat global (polling 5s)
+│   │   ├── i18n.js              # Sistema de tradução (PT/EN/ES)
+│   │   └── perfil.js            # Lógica de renderização do perfil
+│   └── pages/                   # Telas da aplicação (HTML Vanilla)
+│       ├── login.html           # Acesso ao sistema
+│       ├── dashboard.html       # Painel principal do usuário
+│       ├── buscar.html          # Busca com grade de resultados
+│       ├── carona.html          # Detalhes, Mapa e Chat lateral
+│       ├── perfil.html          # Perfil, Histórico e Avaliações
+│       └── pagamento.html       # Checkout de reserva
 └── README.md
 ```
 
@@ -186,48 +155,41 @@ unicaronas/
 
 ## Rotas da API
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/usuarios` | Cadastrar usuário |
-| POST | `/api/usuarios/login` | Login |
-| GET | `/api/usuarios/:id` | Perfil do usuário |
-| GET | `/api/caronas` | Listar caronas disponíveis |
-| POST | `/api/caronas` | Criar carona |
-| GET | `/api/caronas/:id` | Detalhes de uma carona |
-| POST | `/api/caronas/:id/solicitar` | Solicitar vaga |
-| PATCH | `/api/caronas/solicitacoes/:id` | Aceitar ou recusar solicitação |
-| POST | `/api/mensagens` | Enviar mensagem no chat |
-| GET | `/api/mensagens/:solicitacao_id` | Histórico do chat |
-| POST | `/api/pagamentos` | Realizar pagamento |
-| POST | `/api/avaliacoes` | Avaliar usuário |
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| **Usuários** | | | |
+| POST | `/api/usuarios` | Não | Cadastrar novo usuário |
+| POST | `/api/usuarios/login` | Não | Autenticação |
+| GET | `/api/usuarios/:id` | Sim | Ver perfil de um usuário |
+| PATCH | `/api/usuarios/perfil` | Sim | Atualizar dados e foto |
+| **Caronas** | | | |
+| GET | `/api/caronas` | Não | Listar caronas com filtros |
+| POST | `/api/caronas` | Sim | Criar carona (normal ou semanal) |
+| GET | `/api/caronas/:id` | Não | Detalhes da carona |
+| GET | `/api/caronas/historico/:uid`| Sim | Histórico de caronas concluídas |
+| PATCH | `/api/caronas/:id/concluir` | Sim | Finalizar viagem |
+| **Solicitações** | | | |
+| POST | `/api/caronas/:id/solicitar` | Sim | Pedir vaga em carona |
+| GET | `/api/caronas/:id/solicitacoes`| Sim | Listar pedidos (para motorista) |
+| PATCH | `/api/caronas/solicitacoes/:id`| Sim | Aceitar/Recusar pedido |
+| GET | `/api/caronas/solicitacoes/pendentes`| Sim | Contagem de novos pedidos |
+| **Chat & Mensagens** | | | |
+| POST | `/api/mensagens` | Sim | Enviar mensagem |
+| GET | `/api/mensagens/:sid` | Sim | Histórico da conversa |
+| GET | `/api/mensagens/nao-lidas` | Sim | Contagem de mensagens novas |
+| **Avaliações & Pagamento** | | | |
+| POST | `/api/avaliacoes` | Sim | Avaliar motorista ou passageiro |
+| GET | `/api/avaliacoes/:uid` | Não | Ver avaliações de um usuário |
+| POST | `/api/pagamentos` | Sim | Processar pagamento da vaga |
 
 ---
 
 ## Problemas comuns
 
-**`psql` não reconhecido no Windows**
-Adicione `C:\Program Files\PostgreSQL\17\bin` nas variáveis de ambiente do sistema (PATH), ou use o caminho completo para executar o psql.
-
-**"Failed to fetch" no frontend**
-Verifique se o backend está rodando (`npm run dev`) e se o `FRONTEND_URL` no `.env` está como `http://127.0.0.1:5500`.
-
-**Erro de e-mail inválido no cadastro**
-O domínio do e-mail precisa estar listado em `EMAIL_DOMINIOS` no `.env`.
-
-**Porta 3000 já em uso**
-Altere `PORT=3001` no `.env` e atualize a variável `API_URL` em `frontend/js/api.js` para `http://localhost:3001/api`.
-
----
-
-## Documentação
-
-- [Script 0 — Ideia do projeto](docs/requirements/script0.md)
-- [User Stories](docs/requirements/user-stories.md)
-- [Product Backlog e Sprints](docs/requirements/backlog.md)
-- [Arquitetura do sistema](docs/design/architecture.md)
-- [Modelo de dados](docs/design/data-model.md)
-- [Fluxos de tela](docs/design/screens.md)
-- [Roteiro de apresentação](docs/presentations/pitch.md)
+- **Erro de CORS**: Certifique-se que o `FRONTEND_URL` no `.env` corresponde exatamente à URL do Live Server (incluindo a porta).
+- **Token Expirado**: Se receber erro 401, faça logout e login novamente para renovar o token JWT.
+- **Geocodificação no Mapa**: O mapa utiliza Nominatim. Se o endereço não for encontrado, o mapa será ocultado silenciosamente.
+- **Porta em Uso**: Se a porta 3000 estiver ocupada, altere a `PORT` no `.env` e a `API_URL` em `frontend/js/api.js`.
 
 ---
 
@@ -235,10 +197,10 @@ Altere `PORT=3001` no `.env` e atualize a variável `API_URL` em `frontend/js/ap
 
 | Nome | Função |
 |------|--------|
-| — | Product Owner |
-| — | Scrum Master |
-| — | Dev Frontend |
-| — | Dev Backend |
+| **Ariane Archanjo** | Product Owner |
+| **Matheus Sizanoski** | Scrum Master |
+| **Pedro Kafka** | Dev Frontend |
+| **Rafael Machado** | Dev Backend |
 
 ---
 

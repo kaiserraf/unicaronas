@@ -27,6 +27,8 @@ const translations = {
     'label-my-requests': 'Solicitações nas suas caronas',
     'empty-rides': 'Nenhuma carona disponível no momento.',
     'error-rides': 'Erro ao carregar caronas. Verifique se o servidor está rodando.',
+    'of': 'de',
+    'pay': 'Pagar',
     
     // Carona Card / Detalhes
     'card-time': 'Horário',

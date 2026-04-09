@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniCaronas — Detalhes da carona</title>
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     .detalhe-layout {
-      display: grid; grid-template-columns: 1fr 380px;
-      gap: 1.5rem; padding-bottom: 3rem;
+      display: grid; grid-template-columns: 1fr 400px;
+      gap: 3rem; padding-bottom: 3rem; align-items: start;
     }
     .detalhe-rota {
       font-size: 1.3rem; font-weight: 700;
@@ -47,29 +49,8 @@
     .btn-chat-iniciar:active { transform: scale(.97); }
     .btn-chat-iniciar svg { flex-shrink: 0; }
 
-    /* Badge "chat disponível" */
-    .chat-disponivel-badge {
-      display: inline-flex; align-items: center; gap: .4rem;
-      font-size: .72rem; font-weight: 700; letter-spacing: .06em;
-      text-transform: uppercase; color: var(--green);
-      background: var(--green-dim); border: 1px solid rgba(34,211,160,.2);
-      border-radius: 99px; padding: .2rem .65rem;
-    }
-    .chat-disponivel-badge::before {
-      content: ''; display: block;
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--green);
-      animation: pulse-green 1.8s infinite;
-    }
-    @keyframes pulse-green {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: .35; }
-    }
-
-    @media(max-width:860px){ 
+    @media(max-width:992px){ 
       .detalhe-layout{ grid-template-columns:1fr; } 
-      .detalhe-layout > div:nth-child(2) { order: -1; margin-bottom: 1.5rem; }
-      .modal-box { width: 90%; max-width: 400px; padding: 1.5rem; }
     }
   </style>
 </head>
@@ -82,7 +63,7 @@
     <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
     
     <ul class="navbar-links" role="list" style="list-style:none;">
-      <li><a href="../pages/dashboard.html" data-i18n="nav-dashboard">Painel</a></li>
+      <li><a href="../pages/dashboard.html" data-i18n="nav-dashboard">Painel <span id="nav-painel-badge" class="nav-badge" style="display: none;">0</span></a></li>
       <li><a href="../pages/buscar.html" data-i18n="nav-buscar">Buscar carona</a></li>
       <li><a href="../pages/criar-carona.html" data-i18n="nav-oferecer">Oferecer carona</a></li>
       <li><a href="../pages/perfil.html" data-i18n="nav-perfil">Perfil</a></li>
@@ -91,16 +72,29 @@
   </div>
 </nav>
 
-  <div class="container">
-    <div id="alert-container" style="margin-top:1rem"></div>
-    <div id="conteudo" style="padding:2rem 0">
-      <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
-    </div>
-    <div id="area-motorista" style="display:none">
-      <div class="section-label" style="margin-top:2.5rem" data-i18n="label-my-requests">Solicitações na sua carona</div>
-      <div id="lista-solicitacoes">
-        <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
-      </div>  
+  <div class="container" style="padding-top:2rem">
+    <div id="alert-container"></div>
+    
+    <div class="detalhe-layout">
+      <div class="main-content">
+        <!-- Mapa Leaflet reposicionado -->
+        <div id="mapa-carona" style="height: 380px; border-radius: var(--radius-lg); margin-bottom: 2rem; display: none; border: 1px solid var(--border); z-index: 10;"></div>
+
+        <div id="conteudo">
+          <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
+        </div>
+
+        <div id="area-motorista" style="display:none">
+          <div class="section-label" style="margin-top:2.5rem" data-i18n="label-my-requests">Solicitações na sua carona</div>
+          <div id="lista-solicitacoes-pendentes"></div>
+          <div class="section-label" style="margin-top:1.5rem">Passageiros confirmados</div>
+          <div id="lista-solicitacoes-aceitas"></div>
+        </div>
+      </div>
+
+      <div class="sidebar" id="sidebar-conteudo">
+        <!-- Card de preço e botões injetados aqui via JS -->
+      </div>
     </div>
   </div>
 
@@ -115,9 +109,9 @@
   <!-- Modal de Avaliação -->
   <div id="modal-avaliacao" class="modal-overlay">
     <div class="modal-box">
-      <h3 style="margin-bottom:1rem" data-i18n="profile-stats-rating">Avaliar Usuário</h3>
+      <h3 style="margin-bottom:1rem" data-i18n="ride-modal-rate-title">Avaliar Usuário</h3>
       <div class="form-group">
-        <label class="form-label" data-i18n="stat-my-rating">Sua nota</label>
+        <label class="form-label" data-i18n="ride-label-rating">Sua nota</label>
         <div class="rating-input" id="stars">
           <input type="radio" name="nota" value="5" id="s5"><label for="s5"></label>
           <input type="radio" name="nota" value="4" id="s4"><label for="s4"></label>
@@ -127,12 +121,12 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="label-obs">Comentário (opcional)</label>
-        <textarea id="comentario-nota" class="form-control" rows="3" placeholder="Como foi a experiência?"></textarea>
+        <label class="form-label" data-i18n="ride-label-comment">Comentário (opcional)</label>
+        <textarea id="comentario-nota" class="form-control" rows="3" data-i18n="ride-placeholder-comment" placeholder="Como foi a experiência?"></textarea>
       </div>
       <div style="display:flex;gap:1rem;margin-top:1.5rem">
         <button class="btn btn-ghost" onclick="fecharModal()" data-i18n="btn-cancel">Cancelar</button>
-        <button class="btn btn-primary btn-full" onclick="enviarAvaliacao()" data-i18n="profile-stats-rating">Enviar Avaliação</button>
+        <button class="btn btn-primary btn-full" onclick="enviarAvaliacao()" data-i18n="ride-btn-send-rating">Enviar Avaliação</button>
       </div>
     </div>
   </div>
@@ -145,15 +139,13 @@
     const usuario      = getUser();
     const id           = new URLSearchParams(location.search).get('id');
     let   solicitacaoId = null;
-    let   caronaCache   = null; // cache da carona para usar no botão de chat
-    let   pollingChatLateral = null;
-    let   ultimaMensagemId   = 0;
+    let   caronaCache   = null;
+    let   avaliandoId = null;
+    let   avaliandoSolId = null;
 
     if (!id) location.href = 'buscar.html';
 
-    window.addEventListener('languageChanged', () => {
-      carregarDados();
-    });
+    window.addEventListener('languageChanged', () => carregarDados());
 
     async function carregarDados() {
       try {
@@ -169,103 +161,91 @@
           solicitacaoId = minhaSol?.id;
         }
 
-        // Se a solicitação foi aceita, mostra o chat lateral (US08) e link de pagamento (US09)
         const showChat = (sou_motorista) || (minhaSol?.status === 'aceita');
         
         const pagamentoHtml = (!sou_motorista && minhaSol?.status === 'aceita') ? `
           <div class="card mb-2 fade-up" style="background: var(--green-dim); border: 1px solid rgba(34,211,160,.3)">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem">
               <div>
-                <div style="font-weight:700; color:var(--green)">Vaga confirmada!</div>
+                <div style="font-weight:700; color:var(--green)">${t('ride-status-confirmed')}</div>
                 <div style="font-size:0.85rem; color:var(--text-2)">Realize o pagamento para garantir sua vaga.</div>
               </div>
-              <a href="pagamento.html?solicitacao_id=${minhaSol.id}&carona_id=${id}&valor=${c.valor_cobrado}" class="btn btn-success btn-sm">Pagar R$ ${c.valor_cobrado}</a>
+              <a href="pagamento.html?solicitacao_id=${minhaSol.id}&carona_id=${id}&valor=${c.valor_cobrado}" class="btn btn-success btn-sm">Pagar ${formatarMoeda(c.valor_cobrado)}</a>
             </div>
           </div>` : '';
 
+        // Injeção de conteúdo principal
         document.getElementById('conteudo').innerHTML = `
+          <div class="page-header" style="padding-top:1.5rem">
+            <div class="detalhe-rota fade-up">
+              <span>${c.origem}</span>
+              <span class="rota-arrow">→</span>
+              <span>${c.destino}</span>
+            </div>
+          </div>
+          <div class="card mb-2 fade-up fade-up-1">
+            <div class="card-title">${t('ride-details-title')}</div>
+            <div class="info-row"><span class="label">${t('label-datetime')}</span><span class="value">${formatarData(c.horario_partida)}</span></div>
+            <div class="info-row"><span class="label">${t('card-vagas')}</span><span class="value">${c.vagas_disponiveis} ${t('of') || 'de'} ${c.vagas_totais}</span></div>
+            <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge ${c.status === 'concluida' ? 'badge-green' : 'badge-accent'}">${c.status}</span></span></div>
+            ${c.distancia_km ? `<div class="info-row"><span class="label">${t('card-dist')}</span><span class="value">${c.distancia_km} km</span></div>` : ''}
+            ${c.observacoes ? `<div class="info-row"><span class="label">${t('label-obs')}</span><span class="value">${c.observacoes}</span></div>` : ''}
+          </div>
+          <div class="card fade-up fade-up-2">
+            <div class="card-title">${t('profile-stats-driver')}</div>
+            <div class="user-row">
+              <div class="avatar avatar-lg">${iniciais(c.motorista_nome)}</div>
+              <div>
+                <div style="font-size:1.05rem;font-weight:700">${c.motorista_nome}</div>
+                <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} ★ ${t('profile-stats-rating')}</div>
+                ${c.motorista_telefone ? `<div style="font-size:.82rem;color:var(--text-3);margin-top:.2rem">${c.motorista_telefone}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Injeção de Sidebar
+        document.getElementById('sidebar-conteudo').innerHTML = `
           ${pagamentoHtml}
-          <div class="detalhe-layout">
-            <div>
-              <div class="page-header" style="padding-top:1.5rem">
-                <div class="detalhe-rota fade-up">
-                  <span>${c.origem}</span>
-                  <span class="rota-arrow">→</span>
-                  <span>${c.destino}</span>
-                </div>
-              </div>
-              <div class="card mb-2 fade-up fade-up-1">
-                <div class="card-title">${currentLang === 'pt' ? 'Detalhes da viagem' : 'Trip details'}</div>
-                <div class="info-row"><span class="label">${currentLang === 'pt' ? 'Data e hora' : 'Date and time'}</span><span class="value">${formatarData(c.horario_partida)}</span></div>
-                <div class="info-row"><span class="label">${t('card-vagas')}</span><span class="value">${c.vagas_disponiveis} ${currentLang === 'pt' ? 'de' : 'of'} ${c.vagas_totais}</span></div>
-                <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge ${c.status === 'concluida' ? 'badge-green' : 'badge-accent'}">${c.status}</span></span></div>
-                ${c.distancia_km ? `<div class="info-row"><span class="label">${currentLang === 'pt' ? 'Distância estimada' : 'Estimated distance'}</span><span class="value">${c.distancia_km} km</span></div>` : ''}
-                ${c.observacoes ? `<div class="info-row"><span class="label">${t('label-obs')}</span><span class="value">${c.observacoes}</span></div>` : ''}
-              </div>
-              <div class="card fade-up fade-up-2">
-                <div class="card-title">${currentLang === 'pt' ? 'Motorista' : 'Driver'}</div>
-                <div class="user-row">
-                  <div class="avatar avatar-lg">${iniciais(c.motorista_nome)}</div>
-                  <div>
-                    <div style="font-size:1.05rem;font-weight:700">${c.motorista_nome}</div>
-                    <div class="user-rating" style="margin-top:.2rem">${parseFloat(c.motorista_avaliacao||0).toFixed(1)} ★ ${currentLang === 'pt' ? 'de avaliação média' : 'average rating'}</div>
-                    ${c.motorista_telefone ? `<div style="font-size:.82rem;color:var(--text-3);margin-top:.2rem">${c.motorista_telefone}</div>` : ''}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div class="card mb-2 fade-up" style="text-align:center;padding:2rem">
-                <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem">${t('card-price-per-person')}</div>
-                <div class="preco-destaque">${formatarMoeda(c.valor_cobrado)}</div>
-                
-                ${!sou_motorista && !minhaSol && c.status === 'ativa' && c.vagas_disponiveis > 0 ? `
-                <div style="margin-top:1.5rem">
-                  <button class="btn btn-success btn-full" onclick="solicitar()">${currentLang === 'pt' ? 'Solicitar vaga' : 'Request seat'}</button>
-                </div>` : ''}
+          <div class="card mb-2 fade-up" style="text-align:center;padding:2.5rem 2rem">
+            <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:.5rem">${t('card-price-per-person')}</div>
+            <div class="preco-destaque">${formatarMoeda(c.valor_cobrado)}</div>
+            
+            ${!sou_motorista && !minhaSol && c.status === 'ativa' && c.vagas_disponiveis > 0 ? `
+            <div style="margin-top:2rem">
+              <button class="btn btn-success btn-full btn-lg" onclick="solicitar()">${t('ride-btn-request')}</button>
+            </div>` : ''}
 
-                ${!sou_motorista && minhaSol?.status === 'aceita' ? `
-                <div style="margin-top:1.5rem">
-                  <span class="badge badge-green">${currentLang === 'pt' ? 'Vaga confirmada' : 'Seat confirmed'}</span>
-                  <button class="btn btn-primary btn-full mt-1" onclick="abrirModal(${c.motorista_id}, ${minhaSol.id})">${currentLang === 'pt' ? 'Avaliar Motorista' : 'Rate Driver'}</button>
-                </div>` : ''}
+            ${!sou_motorista && minhaSol?.status === 'aceita' ? `
+            <div style="margin-top:2rem">
+              <span class="badge badge-green">${t('ride-status-confirmed')}</span>
+              <button class="btn btn-primary btn-full mt-1" onclick="abrirModal(${c.motorista_id}, ${minhaSol.id})">${t('ride-btn-rate-driver')}</button>
+              <button class="btn btn-chat-iniciar btn-full mt-1" onclick="abrirChatMotorista(${minhaSol.id}, '${c.motorista_nome}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                ${t('ride-chat-title')}
+              </button>
+            </div>` : ''}
 
-                ${!sou_motorista && minhaSol?.status === 'pendente' ? `
-                <div style="margin-top:1.5rem"><span class="badge badge-accent">${currentLang === 'pt' ? 'Aguardando resposta' : 'Waiting for response'}</span></div>` : ''}
+            ${!sou_motorista && minhaSol?.status === 'pendente' ? `
+            <div style="margin-top:2rem"><span class="badge badge-accent">${t('ride-status-waiting')}</span></div>` : ''}
 
-                ${sou_motorista && c.status !== 'concluida' ? `
-                <div style="margin-top:1.5rem">
-                  <button class="btn btn-success btn-full" onclick="concluirCarona()">${currentLang === 'pt' ? 'Concluir carona' : 'Finish ride'}</button>
-                </div>` : ''}
-                
-                ${sou_motorista && c.status === 'concluida' ? `
-                <div style="margin-top:1.5rem"><span class="badge badge-green">${currentLang === 'pt' ? 'Viagem finalizada' : 'Trip finished'}</span></div>` : ''}
-              </div>
-
-              <!-- Chat Lateral (US08) -->
-              <div id="container-chat-lateral" style="display: ${showChat && !sou_motorista ? 'block' : 'none'}">
-                <div id="chat-lateral">
-                  <div class="chat-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    Chat com Motorista
-                  </div>
-                  <div id="chat-msgs"></div>
-                  <div class="chat-input-area">
-                    <input type="text" id="input-chat-lateral" placeholder="Digite uma mensagem..." maxlength="500">
-                    <button class="btn btn-primary btn-sm" id="btn-enviar-lateral" onclick="enviarMensagemLateral()">Enviar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>`;
+            ${sou_motorista && c.status !== 'concluida' ? `
+            <div style="margin-top:2rem">
+              <button class="btn btn-success btn-full btn-lg" onclick="concluirCarona()">${t('ride-btn-finish')}</button>
+            </div>` : ''}
+            
+            ${sou_motorista && c.status === 'concluida' ? `
+            <div style="margin-top:2rem"><span class="badge badge-green">${t('ride-status-finished')}</span></div>` : ''}
+          </div>
+        `;
 
         if (sou_motorista) {
           document.getElementById('area-motorista').style.display = 'block';
           carregarSolicitacoes();
         }
 
-        if (!sou_motorista && minhaSol?.status === 'aceita') {
-          iniciarPollingChat(minhaSol.id);
+        if (c.origem && c.destino) {
+          initMapa(c.origem, c.destino);
         }
 
       } catch(err) {
@@ -273,180 +253,106 @@
       }
     }
 
-    // --- Lógica do Chat Lateral (US08) ---
-    function iniciarPollingChat(sid) {
-      if (pollingChatLateral) clearInterval(pollingChatLateral);
-      solicitacaoId = sid;
-      carregarMensagensLaterais();
-      pollingChatLateral = setInterval(carregarMensagensLaterais, 5000);
-      
-      // Enter para enviar
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && document.activeElement.id === 'input-chat-lateral') {
-          enviarMensagemLateral();
-        }
-      });
-    }
-
-    async function carregarMensagensLaterais() {
-      if (!solicitacaoId) return;
+    async function initMapa(origem, destino) {
       try {
-        const res = await api.listarMensagens(solicitacaoId);
-        const msgs = res.data;
-        const box = document.getElementById('chat-msgs');
-        if (!box) return;
+        const geo = async (q) => fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`).then(r => r.json());
+        const [resO, resD] = await Promise.all([geo(origem), geo(destino)]);
+        if (!resO[0] || !resD[0]) return;
 
-        box.innerHTML = msgs.map(m => {
-          const eu = m.remetente_id === usuario.id;
-          return `
-            <div class="msg-bubble ${eu ? 'msg-me' : 'msg-other'}">
-              ${!eu ? `<div class="msg-meta">${m.remetente_nome}</div>` : ''}
-              ${esc(m.conteudo)}
-            </div>
-          `;
-        }).join('');
-        
-        // Scroll para o fim apenas se houver novas mensagens
-        if (msgs.length > 0 && msgs[msgs.length - 1].id !== ultimaMensagemId) {
-          box.scrollTop = box.scrollHeight;
-          ultimaMensagemId = msgs[msgs.length - 1].id;
-        }
-      } catch (err) { console.error('Erro no chat lateral:', err); }
+        document.getElementById('mapa-carona').style.display = 'block';
+        const map = L.map('mapa-carona', { zoomControl: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        const pO = [resO[0].lat, resO[0].lon], pD = [resD[0].lat, resD[0].lon];
+        L.marker(pO).addTo(map).bindPopup('Origem');
+        L.marker(pD).addTo(map).bindPopup('Destino');
+        map.fitBounds(L.latLngBounds([pO, pD]), { padding: [40, 40] });
+      } catch (e) {}
     }
 
-    async function enviarMensagemLateral() {
-      const input = document.getElementById('input-chat-lateral');
-      const conteudo = input.value.trim();
-      if (!conteudo || !solicitacaoId) return;
-
-      input.value = '';
-      try {
-        await api.enviarMensagem({ solicitacao_id: solicitacaoId, conteudo });
-        carregarMensagensLaterais();
-      } catch (err) { showAlert(err.message, 'error'); }
-    }
-
-    // --- Lógica de Solicitações (US08b) ---
     async function carregarSolicitacoes() {
-      const pendentesContainer = document.getElementById('lista-solicitacoes-pendentes');
-      const aceitasContainer = document.getElementById('lista-solicitacoes-aceitas');
-      
       try {
         const res = await api.solicitacoesCarona(id);
-        const solicitacoes = res.data;
-      
-        const pendentes = solicitacoes.filter(s => s.status === 'pendente');
-        const aceitas   = solicitacoes.filter(s => s.status === 'aceita');
+        const pendentes = res.data.filter(s => s.status === 'pendente');
+        const aceitas   = res.data.filter(s => s.status === 'aceita');
 
-        pendentesContainer.innerHTML = pendentes.length === 0 
-          ? '<p class="text-muted">Nenhuma solicitação pendente.</p>'
-          : pendentes.map(s => `
-            <div class="card mb-2" style="border-left: 4px solid var(--amber)">
-              <div style="display:flex; justify-content:space-between; align-items:center">
-                <div class="user-row">
-                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
-                  <div>
-                    <div class="user-name">${s.passageiro_nome}</div>
-                    <div class="user-rating">${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
-                  </div>
-                </div>
-                <div style="display:flex; gap:0.5rem">
-                  <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita')">Aceitar</button>
-                  <button class="btn btn-danger btn-sm"  onclick="responder(${s.id}, 'recusada')">Recusar</button>
-                </div>
+        document.getElementById('lista-solicitacoes-pendentes').innerHTML = pendentes.map(s => `
+          <div class="card mb-2" style="border-left: 4px solid var(--amber)">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div class="user-row">
+                <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                <div><strong>${s.passageiro_nome}</strong><br><small>${s.passageiro_curso || '—'}</small></div>
               </div>
-            </div>`).join('');
-
-        aceitasContainer.innerHTML = aceitas.length === 0
-          ? '<p class="text-muted">Nenhum passageiro confirmado ainda.</p>'
-          : aceitas.map(s => `
-            <div class="card mb-2" style="border-left: 4px solid var(--green)">
-              <div style="display:flex; justify-content:space-between; align-items:center">
-                <div class="user-row">
-                  <div class="avatar">${iniciais(s.passageiro_nome)}</div>
-                  <div>
-                    <div class="user-name">${s.passageiro_nome}</div>
-                    <div class="user-rating">${s.passageiro_curso || 'Curso não informado'} · ${parseFloat(s.passageiro_avaliacao || 0).toFixed(1)} ★</div>
-                  </div>
-                </div>
-                <div style="display:flex; gap:0.5rem; align-items:center">
-                  <button class="btn btn-primary btn-sm" onclick="abrirChatMotorista(${s.id}, '${esc(s.passageiro_nome)}')">Chat</button>
-                  <button class="btn btn-ghost btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">Avaliar</button>
-                </div>
+              <div style="display:flex; gap:0.5rem">
+                <button class="btn btn-success btn-sm" onclick="responder(${s.id}, 'aceita')">Aceitar</button>
+                <button class="btn btn-danger btn-sm" onclick="responder(${s.id}, 'recusada')">Recusar</button>
               </div>
-            </div>`).join('');
+            </div>
+          </div>`).join('') || '<p class="text-muted">Nenhuma solicitação pendente.</p>';
 
-      } catch (err) {
-        pendentesContainer.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
-      }
+        document.getElementById('lista-solicitacoes-aceitas').innerHTML = aceitas.map(s => `
+          <div class="card mb-2" style="border-left: 4px solid var(--green)">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div class="user-row">
+                <div class="avatar">${iniciais(s.passageiro_nome)}</div>
+                <div><strong>${s.passageiro_nome}</strong></div>
+              </div>
+              <div style="display:flex; gap:0.5rem">
+                <button class="btn btn-primary btn-sm" onclick="abrirChatMotorista(${s.id}, '${s.passageiro_nome}')">${t('ride-chat-title')}</button>
+                <button class="btn btn-ghost btn-sm" onclick="abrirModal(${s.passageiro_id}, ${s.id})">${t('ride-btn-rate-driver').split(' ')[0]}</button>
+              </div>
+            </div>
+          </div>`).join('') || '<p class="text-muted">Nenhum passageiro confirmado.</p>';
+      } catch (err) {}
     }
 
     async function responder(sid, status) {
       try {
         await api.responderSolicitacao(sid, status);
-        showAlert(`Solicitação ${status === 'aceita' ? 'aceita' : 'recusada'}!`, 'success');
-        carregarDados(); // Recarrega para atualizar vagas e listas
+        showAlert(`Solicitação ${status}!`, 'success');
+        carregarDados();
       } catch (err) { showAlert(err.message, 'error'); }
     }
 
     function abrirChatMotorista(sid, nome) {
-      // Motorista usa o chat global ou podemos abrir o lateral também. 
-      // Para seguir o requisito de "Chat lateral em carona.html", vamos abrir o lateral:
-      const container = document.getElementById('container-chat-lateral');
-      container.style.display = 'block';
-      document.querySelector('.chat-header').innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Chat com ${nome}
-      `;
-      iniciarPollingChat(sid);
-      window.scrollTo({ top: container.offsetTop - 100, behavior: 'smooth' });
+      if (window.UCChat) {
+        window.UCChat.iniciarChat(sid, {
+          titulo: caronaCache ? `${caronaCache.origem.split(',')[0]} → ${caronaCache.destino.split(',')[0]}` : 'Conversa',
+          outraPessoa: nome,
+          subtitulo: caronaCache?.motorista_id === usuario.id ? `Passageiro: ${nome}` : `Motorista: ${nome}`
+        });
+      }
     }
 
-    // --- Funções originais mantidas ---
-    function esc(str) { return String(str || '').replace(/'/g, "\\'"); }
-    
     async function solicitar() {
       try {
         await api.solicitarVaga(id);
-        showAlert(currentLang === 'pt' ? 'Solicitação enviada!' : 'Request sent!', 'success');
+        showAlert('Solicitação enviada!', 'success');
         carregarDados();
       } catch(err) { showAlert(err.message, 'error'); }
     }
 
     async function concluirCarona() {
-      if (!confirm(currentLang === 'pt' ? 'Deseja marcar esta carona como concluída?' : 'Do you want to mark this ride as finished?')) return;
+      if (!confirm('Concluir esta carona?')) return;
       try {
         await api.concluirCarona(id);
-        showAlert(currentLang === 'pt' ? 'Carona concluída!' : 'Ride finished!', 'success');
+        showAlert('Carona concluída!', 'success');
         carregarDados();
       } catch(err) { showAlert(err.message, 'error'); }
     }
 
     function abrirModal(avaliadoId, solId) {
-      avaliandoId = avaliadoId;
-      avaliandoSolId = solId;
+      avaliandoId = avaliadoId; avaliandoSolId = solId;
       document.getElementById('modal-avaliacao').style.display = 'flex';
     }
-
-    function fecharModal() {
-      document.getElementById('modal-avaliacao').style.display = 'none';
-    }
+    function fecharModal() { document.getElementById('modal-avaliacao').style.display = 'none'; }
 
     async function enviarAvaliacao() {
       const notaEl = document.querySelector('input[name="nota"]:checked');
-      if (!notaEl) return showAlert(currentLang === 'pt' ? 'Selecione uma nota' : 'Select a rating', 'error');
-      
-      const dados = {
-        solicitacao_id: avaliandoSolId,
-        avaliado_id: avaliandoId,
-        nota: parseInt(notaEl.value),
-        comentario: document.getElementById('comentario-nota').value.trim()
-      };
-
+      if (!notaEl) return;
       try {
-        await api.avaliar(dados);
-        showAlert(currentLang === 'pt' ? 'Avaliação enviada!' : 'Evaluation sent!', 'success');
-        fecharModal();
+        await api.avaliar({ solicitacao_id: avaliandoSolId, avaliado_id: avaliandoId, nota: parseInt(notaEl.value), comentario: document.getElementById('comentario-nota').value });
+        fecharModal(); showAlert('Avaliação enviada!', 'success');
       } catch(err) { showAlert(err.message, 'error'); }
     }
 
