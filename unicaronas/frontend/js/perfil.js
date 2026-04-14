@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (ehProprio) initEdicao(resU.data);
 
   } catch (err) {
+    console.error('Erro ao carregar perfil:', err);
     if (/token/i.test(err.message)) { logout(); return; }
     showAlert(err.message || (currentLang === 'pt' ? 'Erro ao carregar perfil' : 'Error loading profile'), 'error');
   } finally {
@@ -50,15 +51,19 @@ function renderPerfil(u, ehProprio) {
   document.title = u.nome + ' — UniCaronas';
 
   const btn = document.getElementById('btn-editar-perfil');
-  if (ehProprio) { btn.removeAttribute('hidden'); btn.addEventListener('click', abrirModal); }
-  else btn.setAttribute('hidden', '');
+  if (ehProprio) { 
+    btn.removeAttribute('hidden'); 
+    btn.onclick = abrirModal; 
+  } else {
+    btn.setAttribute('hidden', '');
+  }
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 
 function renderStats(u) {
-  setText('stat-motorista',  u.total_caronas_motorista  ?? '—');
-  setText('stat-passageiro', u.total_caronas_passageiro ?? '—');
+  setText('stat-motorista',  u.total_caronas_motorista  ?? '0');
+  setText('stat-passageiro', u.total_caronas_passageiro ?? '0');
   const media = Number(u.avaliacao_media || 0).toFixed(1);
   setText('stat-nota', media);
   document.getElementById('stat-estrelas').innerHTML = renderEstrelas(media, u.total_avaliacoes);
@@ -81,7 +86,7 @@ function renderAvaliacoes(lista) {
 }
 
 function cardAvaliacao(av) {
-  const nome = av.avaliador_nome || 'Usuario';
+  const nome = av.avaliador_nome || 'Usuário';
   const avatar = av.avaliador_foto
     ? `<img src="${av.avaliador_foto}" alt="${nome}" class="avaliacao-foto">`
     : `<span class="avaliacao-iniciais">${iniciais(nome)}</span>`;
@@ -116,12 +121,12 @@ function renderHistorico(lista) {
   if (!container) return;
 
   if (!lista || lista.length === 0) {
-    if (vazio) vazio.style.display = 'block';
+    vazio.style.display = 'block';
     container.innerHTML = '';
     return;
   }
 
-  if (vazio) vazio.style.display = 'none';
+  vazio.style.display = 'none';
   container.innerHTML = lista.map(c => `
     <div class="info-row" style="padding: 1.25rem 0; border-bottom: 1px solid var(--border);">
       <div style="flex: 1; min-width: 0; padding-right: 1rem;">
@@ -144,58 +149,39 @@ function renderHistorico(lista) {
   `).join('');
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
+// ── Modal Edição ──────────────────────────────────────────────────────────────
 
 function initEdicao(u) {
   document.getElementById('edit-nome').value     = u.nome     || '';
   document.getElementById('edit-telefone').value = u.telefone || '';
   document.getElementById('edit-curso').value    = u.curso    || '';
-  document.getElementById('edit-dia-ead').value  = u.dia_ead !== null && u.dia_ead !== undefined ? u.dia_ead : '';
+  document.getElementById('edit-dia-ead').value  = (u.dia_ead !== null && u.dia_ead !== undefined) ? u.dia_ead : '';
 
-  // Preview inicial
   atualizarPreviewFoto(u.foto_url, u.nome);
 
-  // Preview ao selecionar arquivo do dispositivo
-  document.getElementById('edit-foto').addEventListener('change', (e) => {
+  document.getElementById('edit-foto').onchange = (e) => {
     const file = e.target.files[0];
-    const fileNameDisplay = document.getElementById('file-name-display');
-    
     if (file) {
-      if (fileNameDisplay) {
-        fileNameDisplay.textContent = file.name;
-        fileNameDisplay.style.display = 'block';
-      }
-
       const reader = new FileReader();
-      reader.onload = (event) => {
-        atualizarPreviewFoto(event.target.result, document.getElementById('edit-nome').value || getUser()?.nome);
-      };
+      reader.onload = (event) => atualizarPreviewFoto(event.target.result, u.nome);
       reader.readAsDataURL(file);
-    } else {
-      if (fileNameDisplay) fileNameDisplay.style.display = 'none';
     }
-  });
+  };
 
-  document.getElementById('modal-fechar').addEventListener('click', fecharModal);
-  document.getElementById('modal-editar').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('modal-editar')) fecharModal();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharModal(); });
-  document.getElementById('form-editar-perfil').addEventListener('submit', async (e) => {
+  document.getElementById('modal-fechar').onclick = fecharModal;
+  document.getElementById('form-editar-perfil').onsubmit = async (e) => {
     e.preventDefault();
     await salvarPerfil();
-  });
+  };
 }
 
 function abrirModal() {
   document.getElementById('modal-editar').removeAttribute('hidden');
-  document.getElementById('edit-nome').focus();
   document.body.style.overflow = 'hidden';
 }
 
 function fecharModal() {
   document.getElementById('modal-editar').setAttribute('hidden', '');
-  document.getElementById('alert-modal').innerHTML = '';
   document.body.style.overflow = '';
 }
 
@@ -225,11 +211,13 @@ async function salvarPerfil() {
 
     const res = await api.atualizarPerfil(formData);
 
+    // Sincroniza localStorage com os novos dados (incluindo dia_ead)
     const updatedUser = { ...getUser(), ...res.data };
     setUser(updatedUser);
     
+    // Atualiza interface
     setText('perfil-nome',  res.data.nome);
-    setText('perfil-curso', res.data.curso || 'Curso nao informado');
+    setText('perfil-curso', res.data.curso || 'Curso não informado');
     atualizarAvatar('perfil-avatar', res.data.foto_url, res.data.nome);
 
     fecharModal();
@@ -238,7 +226,7 @@ async function salvarPerfil() {
     showAlert(err.message || 'Erro ao salvar', 'error', 'alert-modal');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Salvar alteracoes';
+    btn.textContent = 'Salvar alterações';
   }
 }
 
@@ -265,14 +253,11 @@ function atualizarAvatar(elId, fotoUrl, nome) {
 }
 
 function atualizarPreviewFoto(url, nome) {
-  const box      = document.getElementById('foto-preview-box');
-  const inicBox  = document.getElementById('foto-preview-iniciais');
+  const box = document.getElementById('foto-preview-box');
   if (!box) return;
-
   if (url) {
-    box.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;"
-      onerror="this.parentElement.innerHTML='<span class=\\'foto-preview-iniciais\\'>${iniciais(nome)}</span>'">`;
+    box.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
   } else {
-    box.innerHTML = `<span class="foto-preview-iniciais">${iniciais(nome || '?')}</span>`;
+    box.innerHTML = `<span class="foto-preview-iniciais">${iniciais(nome)}</span>`;
   }
 }

@@ -4,12 +4,12 @@
 -- ATENÇÃO: Senhas estão em hash bcrypt de "senha123"
 -- O hash abaixo é um exemplo válido para fins de demonstração local.
 
-INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso, avaliacao_media, total_avaliacoes) VALUES
-  ('Ana Silva',    'ana.silva@uni.edu.br',    '2021001', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0001', 'Engenharia de Software', 4.8, 12),
-  ('Carlos Lima',  'carlos.lima@uni.edu.br',  '2021002', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0002', 'Ciência da Computação',  4.5,  8),
-  ('Julia Santos', 'julia.santos@uni.edu.br', '2020003', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0003', 'Sistemas de Informação', 4.9, 20),
-  ('Pedro Costa',  'pedro.costa@uni.edu.br',  '2022004', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0004', 'Engenharia de Software', 3.0,  1),
-  ('Mariana Rocha','mariana.rocha@uni.edu.br','2021005', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0005', 'Ciência da Computação',  4.2,  5);
+INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso, dia_ead, avaliacao_media, total_avaliacoes) VALUES
+  ('Ana Silva',    'ana.silva@uni.edu.br',    '2021001', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0001', 'Engenharia de Software', 5, 4.8, 12),
+  ('Carlos Lima',  'carlos.lima@uni.edu.br',  '2021002', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0002', 'Ciência da Computação',  NULL, 4.5,  8),
+  ('Julia Santos', 'julia.santos@uni.edu.br', '2020003', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0003', 'Sistemas de Informação', 4, 4.9, 20),
+  ('Pedro Costa',  'pedro.costa@uni.edu.br',  '2022004', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0004', 'Engenharia de Software', NULL, 3.0,  1),
+  ('Mariana Rocha','mariana.rocha@uni.edu.br','2021005', '$2b$10$R9h/lIPz0gi.URQHeih6UuR5E2.vV4T.C/5qT.tV4U6L.vV4T.C/5', '(41) 99001-0005', 'Ciência da Computação',  NULL, 4.2,  5);
 
 INSERT INTO caronas (motorista_id, origem, destino, horario_partida, vagas_totais, vagas_disponiveis, valor_sugerido, valor_cobrado, distancia_km, status, recorrente) VALUES
   -- Caronas ativas

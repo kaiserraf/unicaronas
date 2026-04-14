@@ -393,7 +393,7 @@ const historico = async (req, res, next) => {
   try {
     const usuario_id = parseInt(req.params.usuario_id, 10);
     const { rows } = await db.query(
-      `SELECT c.*, 'motorista' as papel, NULL as solicitacao_id FROM caronas c
+      `SELECT c.*, 'motorista' as papel, CAST(NULL AS INTEGER) as solicitacao_id FROM caronas c
        WHERE c.motorista_id = $1 AND c.status = 'concluida'
        UNION ALL
        SELECT c.*, 'passageiro' as papel, s.id as solicitacao_id FROM caronas c

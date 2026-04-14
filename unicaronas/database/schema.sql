@@ -23,6 +23,7 @@ CREATE TABLE usuarios (
   telefone         VARCHAR(20),
   foto_url         VARCHAR(255),
   curso            VARCHAR(100),
+  dia_ead          INT,
   avaliacao_media  DECIMAL(2,1)  NOT NULL DEFAULT 0.0,
   total_avaliacoes INT           NOT NULL DEFAULT 0,
   ativo            BOOLEAN       NOT NULL DEFAULT true,
