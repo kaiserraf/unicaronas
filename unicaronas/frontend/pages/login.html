@@ -3,126 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniCaronas — Entrar</title>
+  <title>UniCaronas — Acesso ao Sistema</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    body {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .login-wrap { 
+      min-height: calc(100vh - 180px); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 3rem 0;
     }
-
-    /* Painel esquerdo — visual */
-    .login-visual {
-      background: var(--bg-2);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      justify-content: center; padding: 4rem;
-      position: relative; overflow: hidden;
+    .login-card { 
+      width: 100%; 
+      max-width: 400px; 
+      padding: 2.5rem; 
     }
-    .login-visual::before {
-      content: '';
-      position: absolute; top: -120px; left: -120px;
-      width: 420px; height: 420px; border-radius: 50%;
-      background: var(--accent-glow);
-      filter: blur(80px);
-    }
-    .login-visual::after {
-      content: '';
-      position: absolute; bottom: -80px; right: -80px;
-      width: 280px; height: 280px; border-radius: 50%;
-      background: rgba(34,211,160,.08);
-      filter: blur(60px);
-    }
-    .visual-content { position: relative; z-index: 1; }
-    .visual-logo {
-      font-size: 1.5rem; font-weight: 700;
-      letter-spacing: -.5px; margin-bottom: 3rem;
-    }
-    .visual-logo span { color: var(--accent-2); }
-    .visual-headline {
-      font-size: 2.4rem; font-weight: 700;
-      line-height: 1.2; letter-spacing: -.8px;
-      margin-bottom: 1.2rem;
-    }
-    .visual-headline em { font-style: normal; color: var(--accent-2); }
-    .visual-desc { color: var(--text-2); font-size: .95rem; max-width: 340px; line-height: 1.7; }
-    .visual-stats {
-      display: flex; gap: 2.5rem; margin-top: 3rem;
-    }
-    .visual-stat .num { font-size: 1.6rem; font-weight: 700; color: var(--text); }
-    .visual-stat .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); font-weight: 600; }
-
-    /* Painel direito — form */
-    .login-form-panel {
-      display: flex; align-items: center; justify-content: center;
-      padding: 3rem 2rem; background: var(--bg);
-    }
-    .login-box { width: 100%; max-width: 380px; }
-    .login-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -.4px; margin-bottom: .4rem; }
-    .login-subtitle { color: var(--text-3); font-size: .88rem; margin-bottom: 2rem; }
-
-    @media(max-width:768px){
-      body { display: block; height: auto; }
-      .login-visual { display: none; }
-      .login-form-panel { padding: 4rem 1.5rem; min-height: 100vh; align-items: flex-start; }
-      .login-box { max-width: 100%; margin: 0; }
-    }
+    .login-header { text-align: center; margin-bottom: 2rem; }
+    .login-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
+    .login-header p { color: var(--text-2); font-size: .9rem; }
   </style>
 </head>
 <body>
 
-  <!-- Visual -->
-  <div class="login-visual">
-    <div class="visual-content fade-up">
-      <div class="visual-logo">Uni<span>Caronas</span></div>
-      <h1 class="visual-headline">Caronas para<br>quem faz parte<br>da <em>sua universidade</em></h1>
-      <p class="visual-desc">Conecte-se com colegas que fazem o mesmo trajeto. Divida custos, reduza o trânsito e chegue com segurança.</p>
-      <div class="visual-stats">
-        <div class="visual-stat">
-          <div class="num">100%</div>
-          <div class="lbl">Estudantes verificados</div>
-        </div>
-        <div class="visual-stat">
-          <div class="num">Seguro</div>
-          <div class="lbl">Comunidade fechada</div>
-        </div>
+  <nav class="navbar">
+    <div class="container">
+      <a href="#" class="navbar-brand">Uni<span>Caronas</span></a>
+      <div class="flex gap-1">
+        <button class="btn btn-ghost btn-sm" onclick="setLanguage('pt')">PT</button>
+        <button class="btn btn-ghost btn-sm" onclick="setLanguage('en')">EN</button>
+        <button class="btn btn-ghost btn-sm" onclick="setLanguage('es')">ES</button>
       </div>
     </div>
-  </div>
+  </nav>
 
-  <!-- Form -->
-  <div class="login-form-panel">
-    <div class="login-box fade-up">
-      <div class="login-title" data-i18n="login-title">Bem-vindo de volta</div>
-      <p class="login-subtitle" data-i18n="login-sub">Acesse sua conta para continuar</p>
+  <main class="container">
+    <div class="login-wrap">
+      <div class="card login-card fade-up">
+        <div class="login-header">
+          <h1 data-i18n="login-title">Bem-vindo</h1>
+          <p data-i18n="login-sub">Acesse sua conta para continuar</p>
+        </div>
 
-      <div id="alert-container"></div>
+        <div id="alert-container"></div>
 
-      <div class="form-group">
-        <label class="form-label" data-i18n="label-email">E-mail institucional</label>
-        <input class="form-control" type="email" id="email" placeholder="seu@universidade.edu.br" autocomplete="email">
+        <form id="form-login">
+          <div class="form-group">
+            <label class="form-label" data-i18n="label-email">E-mail Institucional</label>
+            <input type="email" id="email" class="form-control" placeholder="nome@uni.edu.br" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="label-password">Senha</label>
+            <input type="password" id="senha" class="form-control" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full mt-2" id="btn-login" data-i18n="btn-login">Entrar</button>
+        </form>
+
+        <div class="divider"></div>
+        <p class="text-center text-muted" style="font-size: .82rem">
+          <span data-i18n="login-no-account">Não tem uma conta?</span> 
+          <a href="cadastro.html" data-i18n="btn-register">Cadastre-se</a>
+        </p>
       </div>
-
-      <div class="form-group">
-        <label class="form-label" data-i18n="label-password">Senha</label>
-        <input class="form-control" type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
-      </div>
-
-      <button class="btn btn-primary btn-full mt-2" onclick="fazerLogin()" id="btn-login" data-i18n="btn-login">
-        Entrar
-      </button>
-
-      <p class="text-center text-muted mt-2" style="font-size:.85rem">
-        <span data-i18n="login-no-account">Não tem uma conta?</span> <a href="cadastro.html" data-i18n="login-create-account">Criar conta</a>
-      </p>
     </div>
-  </div>
+  </main>
 
   <footer class="footer">
     <div class="container footer-content">
       <div class="footer-logo">Uni<span>Caronas</span></div>
-      <div class="footer-dev">Desenvolvido por <a href="#">Ariane Archanjo</a>, <a href="#">Matheus Sizanoski</a>, <a href="#">Pedro Kafka</a> e <a href="#">Rafael Machado</a></div>
       <div class="footer-copyright">© 2026 UniCaronas — Todos os direitos reservados.</div>
     </div>
   </footer>
@@ -132,12 +79,11 @@
   <script>
     if (isLogado()) window.location.href = 'dashboard.html';
 
-    async function fazerLogin() {
-      const email = document.getElementById('email').value.trim();
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
       const senha = document.getElementById('senha').value;
-      const btn   = document.getElementById('btn-login');
-
-      if (!email || !senha) return showAlert(currentLang === 'pt' ? 'Preencha todos os campos' : 'Fill in all fields', 'error');
+      const btn = document.getElementById('btn-login');
 
       btn.disabled = true;
       btn.textContent = currentLang === 'pt' ? 'Entrando...' : 'Logging in...';
@@ -152,9 +98,7 @@
         btn.disabled = false;
         btn.textContent = t('btn-login');
       }
-    }
-
-    document.addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+    });
   </script>
 </body>
 </html>

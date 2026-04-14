@@ -6,7 +6,6 @@
   <title>UniCaronas — Oferecer carona</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    .page-content { max-width: 580px; margin: 0 auto; padding-bottom: 3rem; }
     .calc-note {
       font-size: .76rem; color: var(--text-3);
       font-family: var(--font-mono);
@@ -32,83 +31,81 @@
   </div>
 </nav>
 
-  <div class="container" style="padding-bottom: 4rem;">
-    <div class="page-content">
-      <div class="page-header fade-up">
-        <h2 data-i18n="create-title">Oferecer carona</h2>
-        <p data-i18n="create-sub">Publique sua carona e divida os custos do trajeto</p>
-      </div>
-
-      <div class="card fade-up">
-        <div id="alert-container"></div>
-
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" data-i18n="label-origin">Origem</label>
-            <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida">
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="label-destination">Destino</label>
-            <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" data-i18n="label-datetime">Data e horário</label>
-            <input class="form-control" id="horario" type="datetime-local" onchange="verificarDiaEad()">
-            <div id="aviso-ead" class="alert alert-warning" style="display:none; margin-top:0.5rem; padding: 0.5rem; font-size: 0.8rem;">
-              Atenção: Este é o seu dia EAD. Você tem certeza que deseja oferecer carona?
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="label-vagas">Vagas disponíveis</label>
-            <input class="form-control" id="vagas" type="number" min="1" max="6" value="3">
-          </div>
-        </div>
-
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" data-i18n="card-dist">Distância estimada (km)</label>
-            <input class="form-control" id="distancia" type="number" min="0" step="0.5"
-              placeholder="Ex: 25" oninput="atualizarSugestao()">
-            <span class="form-hint">valor_sugerido = distância × R$ 0,30 / km</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="label-value">Valor por passageiro</label>
-            <input class="form-control" id="valor" type="number" min="0" step="0.50" placeholder="0,00">
-            <span class="form-hint" data-i18n="btn-publish">Aceite a sugestão ou defina outro valor</span>
-          </div>
-        </div>
-
-        <div class="price-suggestion" id="sugestao-box" style="display:none">
-          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem">Valor sugerido pela plataforma</div>
-          <div class="suggested-value" id="sugestao-valor">R$ 0,00</div>
-          <p>Baseado na distância informada. Você pode alterar ao lado.</p>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label"><span data-i18n="label-obs">Observações</span> <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <textarea class="form-control" id="observacoes" rows="2"
-            placeholder="Ponto de encontro, desvio aceito, bagagem..." data-i18n="label-obs"></textarea>
-        </div>
-
-        <div class="toggle-wrap">
-          <label class="toggle">
-            <input type="checkbox" id="recorrente">
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="toggle-label">Carona semanal (criar para as próximas 4 semanas)</span>
-        </div>
-
-        <div class="divider"></div>
-
-        <button class="btn btn-success btn-full" onclick="publicarCarona()" id="btn-pub" data-i18n="btn-publish">
-          Publicar carona
-        </button>
-      </div>
+  <main class="container" style="padding-bottom: 4rem;">
+    <div class="page-header fade-up">
+      <h2 data-i18n="create-title">Oferecer carona</h2>
+      <p data-i18n="create-sub">Publique sua carona e divida os custos do trajeto</p>
     </div>
-  </div>
+
+    <div class="card fade-up">
+      <div id="alert-container"></div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-origin">Origem</label>
+          <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-destination">Destino</label>
+          <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-datetime">Data e horário</label>
+          <input class="form-control" id="horario" type="datetime-local" onchange="verificarDiaEad()">
+          <div id="aviso-ead" class="alert alert-warning" style="display:none; margin-top:0.5rem; padding: 0.5rem; font-size: 0.8rem;">
+            Atenção: Este é o seu dia EAD. Você tem certeza que deseja oferecer carona?
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-vagas">Vagas disponíveis</label>
+          <input class="form-control" id="vagas" type="number" min="1" max="6" value="3">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" data-i18n="card-dist">Distância estimada (km)</label>
+          <input class="form-control" id="distancia" type="number" min="0" step="0.5"
+            placeholder="Ex: 25" oninput="atualizarSugestao()">
+          <span class="form-hint">valor_sugerido = distância × R$ 0,30 / km</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-value">Valor por passageiro</label>
+          <input class="form-control" id="valor" type="number" min="0" step="0.50" placeholder="0,00">
+          <span class="form-hint" data-i18n="btn-publish">Aceite a sugestão ou defina outro valor</span>
+        </div>
+      </div>
+
+      <div class="price-suggestion" id="sugestao-box" style="display:none">
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.3rem">Valor sugerido pela plataforma</div>
+        <div class="suggested-value" id="sugestao-valor">R$ 0,00</div>
+        <p>Baseado na distância informada. Você pode alterar ao lado.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span data-i18n="label-obs">Observações</span> <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+        <textarea class="form-control" id="observacoes" rows="2"
+          placeholder="Ponto de encontro, desvio aceito, bagagem..." data-i18n="label-obs"></textarea>
+      </div>
+
+      <div class="toggle-wrap">
+        <label class="toggle">
+          <input type="checkbox" id="recorrente">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">Carona semanal (criar para as próximas 4 semanas)</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-success btn-full" onclick="publicarCarona()" id="btn-pub" data-i18n="btn-publish">
+        Publicar carona
+      </button>
+    </div>
+  </main>
 
   <footer class="footer">
     <div class="container footer-content">
@@ -181,7 +178,7 @@
         let msg = currentLang === 'pt' ? 'Carona publicada com sucesso!' : 'Ride published successfully!';
         if (res.avisos && res.avisos.length > 0) {
           msg += '\n\nNotas:\n' + res.avisos.join('\n');
-          alert(msg); // Usando alert para garantir que o usuário veja os avisos de datas puladas
+          alert(msg);
         } else {
           showAlert(msg, 'success');
         }
@@ -189,7 +186,8 @@
         setTimeout(() => window.location.href = `carona.html?id=${res.data.id}`, 2000);
       } catch(err) {
         showAlert(err.message, 'error');
-        btn.disabled = false; btn.textContent = t('btn-publish') || (currentLang === 'pt' ? 'Publicar carona' : 'Publish ride');
+        btn.disabled = false;
+        btn.textContent = t('btn-publish') || (currentLang === 'pt' ? 'Publicar carona' : 'Publish ride');
       }
     }
     

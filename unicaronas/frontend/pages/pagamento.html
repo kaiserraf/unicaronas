@@ -3,99 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pagamento — UniCaronas</title>
+  <title>UniCaronas — Pagamento</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    .pagamento-card {
-      max-width: 500px; margin: 4rem auto; padding: 2.5rem;
-    }
-    .resumo-valores {
-      background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius-md);
-      margin: 1.5rem 0; border: 1px solid var(--border);
-    }
-    .valor-item {
-      display: flex; justify-content: space-between; margin-bottom: 0.75rem;
-      font-size: 0.95rem;
-    }
-    .valor-total {
-      border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;
-      font-weight: 700; font-size: 1.2rem; color: var(--accent);
-    }
-    .metodos-pagamento {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;
-    }
     .metodo-card {
-      border: 2px solid var(--border); border-radius: var(--radius-sm);
-      padding: 1rem; text-align: center; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1.25rem; border: 1px solid var(--border);
+      border-radius: var(--radius); cursor: pointer; transition: .2s;
+      background: var(--bg-3);
     }
-    .metodo-card:hover { border-color: var(--accent-light); background: var(--bg-3); }
-    .metodo-card.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
-    .metodo-card svg { margin-bottom: 0.5rem; display: block; margin-inline: auto; }
+    .metodo-card:hover { border-color: var(--accent); background: var(--surface); }
+    .metodo-card.active { border-color: var(--accent); background: var(--accent-glow); }
+    .metodo-card input { display: none; }
+    .metodo-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="container" style="position: relative;">
-      <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('active')">
-        <span></span><span></span><span></span>
-      </button>
-      <a href="dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
-      
-      <ul class="navbar-links" role="list" style="list-style:none;">
-        <li><a href="dashboard.html">Painel <span id="nav-painel-badge" class="nav-badge" style="display: none;">0</span></a></li>
-        <li><a href="buscar.html">Buscar carona</a></li>
-        <li><a href="criar-carona.html">Oferecer carona</a></li>
-        <li><a href="perfil.html">Perfil</a></li>
-      </ul>
-    </div>
-  </nav>
-
+<nav class="navbar">
   <div class="container">
-    <div id="alert-container"></div>
-    <div class="card pagamento-card fade-up">
-      <h2 style="margin-bottom:0.5rem">Finalizar Pagamento</h2>
-      <p class="text-muted">Confirme os detalhes da sua carona.</p>
-
-      <div class="resumo-valores" id="resumo">
-        <div class="valor-item">
-          <span>Valor da carona</span>
-          <span id="valor-carona">R$ 0,00</span>
-        </div>
-        <div class="valor-item">
-          <span title="Taxa de manutenção da plataforma">Taxa UniCaronas (10%)</span>
-          <span id="valor-taxa" style="color: var(--red)">R$ 0,00</span>
-        </div>
-        <div class="valor-item valor-total">
-          <span>Total a pagar</span>
-          <span id="total-pagar">R$ 0,00</span>
-        </div>
-        <div style="font-size: 0.75rem; color: var(--text-3); margin-top: 0.5rem; text-align: right;">
-          Repasse ao motorista: <span id="valor-motorista">R$ 0,00</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Selecione o método</label>
-        <div class="metodos-pagamento">
-          <div class="metodo-card active" onclick="setMetodo(this, 'cartao_credito')">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-            Cartão
-          </div>
-          <div class="metodo-card" onclick="setMetodo(this, 'pix')">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-            PIX
-          </div>
-          <div class="metodo-card" onclick="setMetodo(this, 'dinheiro')">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            Dinheiro
-          </div>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-full btn-lg" id="btn-confirmar" onclick="confirmarPagamento()">Confirmar Pagamento</button>
-      <button class="btn btn-ghost btn-full mt-1" onclick="history.back()">Voltar</button>
-    </div>
+    <a href="dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
   </div>
+</nav>
+
+  <main class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
+    <div class="page-header fade-up" style="padding-top:0">
+      <h2 data-i18n="pay-title">Confirmar reserva</h2>
+      <p data-i18n="pay-sub">Escolha a forma de pagamento para sua vaga</p>
+    </div>
+
+    <div class="card mb-2 fade-up">
+      <div class="card-title" data-i18n="pay-summary">Resumo da carona</div>
+      <div id="resumo-carona">
+        <p class="text-muted" data-i18n="welcome-loading">Carregando...</p>
+      </div>
+    </div>
+
+    <div class="card fade-up">
+      <div class="card-title" data-i18n="pay-method">Forma de pagamento</div>
+      <div id="alert-container"></div>
+
+      <form id="form-pagamento">
+        <div style="display:flex; flex-direction:column; gap:1rem">
+          <label class="metodo-card active">
+            <input type="radio" name="metodo" value="pix" checked>
+            <div class="metodo-icon">💎</div>
+            <div>
+              <div style="font-weight:600; font-size:.9rem">Pix</div>
+              <div style="font-size:.75rem; color:var(--text-3)">Aprovação imediata</div>
+            </div>
+          </label>
+          <label class="metodo-card">
+            <input type="radio" name="metodo" value="cartao_credito">
+            <div class="metodo-icon">💳</div>
+            <div>
+              <div style="font-weight:600; font-size:.9rem">Cartão de Crédito</div>
+              <div style="font-size:.75rem; color:var(--text-3)">Até 12x com juros</div>
+            </div>
+          </label>
+          <label class="metodo-card">
+            <input type="radio" name="metodo" value="dinheiro">
+            <div class="metodo-icon">💵</div>
+            <div>
+              <div style="font-weight:600; font-size:.9rem">Dinheiro</div>
+              <div style="font-size:.75rem; color:var(--text-3)">Pague diretamente ao motorista</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem">
+          <span style="font-weight:600; color:var(--text-2)" data-i18n="pay-total">Total a pagar</span>
+          <span id="valor-total" style="font-size:1.5rem; font-weight:700; color:var(--text)">R$ 0,00</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="btn-confirmar" data-i18n="pay-btn-confirm">Confirmar e Pagar</button>
+      </form>
+    </div>
+  </main>
 
   <footer class="footer">
     <div class="container footer-content">
@@ -106,51 +94,56 @@
   </footer>
 
   <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
     protegerRota();
     const params = new URLSearchParams(location.search);
-    const sid    = params.get('solicitacao_id');
-    const cid    = params.get('carona_id');
-    const valor  = parseFloat(params.get('valor') || 0);
-    let   metodoSelected = 'cartao_credito';
+    const solId = params.get('solicitacao_id');
+    const carId = params.get('carona_id');
+    const valor = params.get('valor');
 
-    if (!sid || !valor) location.href = 'dashboard.html';
+    if (!solId || !carId) location.href = 'dashboard.html';
 
-    function init() {
-      const taxa = valor * 0.10;
-      const repasse = valor - taxa;
-
-      document.getElementById('valor-carona').textContent = formatarMoeda(valor);
-      document.getElementById('valor-taxa').textContent   = '- ' + formatarMoeda(taxa);
-      document.getElementById('total-pagar').textContent   = formatarMoeda(valor);
-      document.getElementById('valor-motorista').textContent = formatarMoeda(repasse);
+    async function carregarResumo() {
+      try {
+        const res = await api.buscarCarona(carId);
+        const c = res.data;
+        document.getElementById('resumo-carona').innerHTML = `
+          <div style="font-weight:600; font-size:1rem; margin-bottom:.5rem">${c.origem} → ${c.destino}</div>
+          <div class="text-muted" style="font-size:.85rem">${formatarData(c.horario_partida)}</div>
+          <div class="text-muted" style="font-size:.85rem">${t('profile-stats-driver')}: ${c.motorista_nome}</div>
+        `;
+        document.getElementById('valor-total').textContent = formatarMoeda(valor);
+      } catch(e) {}
     }
 
-    function setMetodo(el, m) {
-      document.querySelectorAll('.metodo-card').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
-      metodoSelected = m;
-    }
+    document.querySelectorAll('.metodo-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.metodo-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+      });
+    });
 
-    async function confirmarPagamento() {
+    document.getElementById('form-pagamento').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const metodo = document.querySelector('input[name="metodo"]:checked').value;
       const btn = document.getElementById('btn-confirmar');
+      
       btn.disabled = true;
-      btn.textContent = 'Processando...';
+      btn.textContent = currentLang === 'pt' ? 'Processando...' : 'Processing...';
 
       try {
-        await api.pagar({ solicitacao_id: sid, metodo: metodoSelected });
-        showAlert('Pagamento realizado com sucesso!', 'success');
-        setTimeout(() => {
-          location.href = `carona.html?id=${cid}`;
-        }, 1500);
-      } catch (err) {
+        await api.pagar({ solicitacao_id: parseInt(solId), metodo });
+        showAlert(currentLang === 'pt' ? 'Pagamento realizado com sucesso!' : 'Payment successful!', 'success');
+        setTimeout(() => location.href = `carona.html?id=${carId}`, 1500);
+      } catch(err) {
         showAlert(err.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Confirmar Pagamento';
+        btn.textContent = t('pay-btn-confirm');
       }
-    }
+    });
 
-    init();
+    carregarResumo();
   </script>
 </body>
 </html>
