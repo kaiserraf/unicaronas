@@ -1,56 +1,3 @@
-/*
-// =============================================================
-// UniCaronas — server.js
-// =============================================================
-const express = require('express');
-const cors    = require('cors');
-const helmet  = require('helmet');
-require('dotenv').config();
-
-const usuariosRoutes   = require('./src/routes/usuarios');
-const caronasRoutes    = require('./src/routes/caronas');
-const mensagensRoutes  = require('./src/routes/mensagens');
-const pagamentosRoutes = require('./src/routes/pagamentos');
-const avaliacoesRoutes = require('./src/routes/avaliacoes');
-const errorHandler     = require('./src/middleware/errorHandler');
-
-const app  = express();
-const PORT = process.env.PORT || 3000;
-
-// ── Middleware globais ──────────────────────────────────────
-app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// ── Rota de health check ────────────────────────────────────
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// ── Rotas da API ────────────────────────────────────────────
-app.use('/api/usuarios',   usuariosRoutes);
-app.use('/api/caronas',    caronasRoutes);
-app.use('/api/mensagens',  mensagensRoutes);
-app.use('/api/pagamentos', pagamentosRoutes);
-app.use('/api/avaliacoes', avaliacoesRoutes);
-
-// ── Rota 404 ────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Rota não encontrada' });
-});
-
-// ── Error handler global ────────────────────────────────────
-app.use(errorHandler);
-
-// ── Iniciar servidor ────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅ UniCaronas API rodando em http://localhost:${PORT}`);
-});
-
-module.exports = app;
-*/
-
 // =============================================================
 // UniCaronas — server.js
 // =============================================================
@@ -65,6 +12,7 @@ const caronasRoutes    = require('./src/routes/caronas');
 const mensagensRoutes  = require('./src/routes/mensagens');
 const pagamentosRoutes = require('./src/routes/pagamentos');
 const avaliacoesRoutes = require('./src/routes/avaliacoes');
+const veiculoRoutes    = require('./src/routes/veiculoRoutes');
 const errorHandler     = require('./src/middleware/errorHandler');
 
 const app  = express();
@@ -103,6 +51,7 @@ app.use('/api/caronas',    caronasRoutes);
 app.use('/api/mensagens',  mensagensRoutes);
 app.use('/api/pagamentos', pagamentosRoutes);
 app.use('/api/avaliacoes', avaliacoesRoutes);
+app.use('/api/veiculos',   veiculoRoutes);
 
 // ── Rota 404 ────────────────────────────────────────────────
 app.use((req, res) => {

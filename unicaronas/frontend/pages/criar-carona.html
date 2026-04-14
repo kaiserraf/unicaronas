@@ -44,12 +44,52 @@
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label" data-i18n="label-origin">Origem</label>
-          <input class="form-control" id="origem" type="text" placeholder="Bairro ou endereço de partida">
+          <input class="form-control" id="origem" type="text" placeholder="Seu local de partida">
         </div>
         <div class="form-group">
           <label class="form-label" data-i18n="label-destination">Destino</label>
           <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
         </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-vehicle">Veículo (opcional)</label>
+          <select class="form-control" id="veiculo_id">
+            <option value="">Carregando veículos...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="label-meeting-point">Ponto de encontro <span style="color:var(--red)">*</span></label>
+          <input class="form-control" id="ponto_encontro" type="text" list="lista-pontos" placeholder="Ex: Portaria Principal" required>
+          <datalist id="lista-pontos">
+            <option value="Bloco A"></option>
+            <option value="Bloco B"></option>
+            <option value="Bloco C"></option>
+            <option value="Bloco 1"></option>
+            <option value="Bloco 2"></option>
+            <option value="Bloco 3"></option>
+            <option value="Bloco 4"></option>
+            <option value="Bloco 5"></option>
+            <option value="Bloco 6"></option>
+            <option value="Bloco 7"></option>
+            <option value="Bloco 8"></option>
+            <option value="Bloco 9"></option>
+            <option value="Bloco 10"></option>
+            <option value="Biblioteca"></option>
+            <option value="Cantina"></option>
+            <option value="Estacionamento Central"></option>
+            <option value="Portaria Principal"></option>
+            <option value="Portaria Lateral"></option>
+            <option value="Ginásio"></option>
+            <option value="Lab de Informática"></option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" data-i18n="label-meeting-point-details">Detalhes do ponto de encontro <span style="color:var(--red)">*</span></label>
+        <input class="form-control" id="ponto_encontro_detalhes" type="text" placeholder="Ex: ao lado da escada, em frente à copa..." required>
       </div>
 
       <div class="grid-2">
@@ -154,10 +194,29 @@
       }
     }
 
+    async function carregarVeiculos() {
+      const select = document.getElementById('veiculo_id');
+      try {
+        const res = await api.listarVeiculos();
+        if (res.data.length > 0) {
+          select.innerHTML = '<option value="">Nenhum (carona sem veículo cadastrado)</option>' + 
+            res.data.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join('');
+        } else {
+          select.innerHTML = '<option value="">Nenhum veículo cadastrado</option>';
+        }
+      } catch (e) {
+        select.innerHTML = '<option value="">Erro ao carregar veículos</option>';
+      }
+    }
+    carregarVeiculos();
+
     async function publicarCarona() {
       const dados = {
         origem:          document.getElementById('origem').value.trim(),
         destino:         document.getElementById('destino').value.trim(),
+        ponto_encontro:  document.getElementById('ponto_encontro').value.trim(),
+        ponto_encontro_detalhes: document.getElementById('ponto_encontro_detalhes').value.trim(),
+        veiculo_id:      document.getElementById('veiculo_id').value || null,
         horario_partida: document.getElementById('horario').value,
         vagas_totais:    parseInt(document.getElementById('vagas').value),
         valor_cobrado:   parseFloat(document.getElementById('valor').value),
@@ -166,8 +225,8 @@
         recorrente:      document.getElementById('recorrente').checked
       };
 
-      if (!dados.origem || !dados.destino || !dados.horario_partida || !dados.valor_cobrado) {
-        return showAlert(currentLang === 'pt' ? 'Preencha origem, destino, horário e valor' : 'Fill in origin, destination, time and value', 'error');
+      if (!dados.origem || !dados.destino || !dados.ponto_encontro || !dados.horario_partida || !dados.valor_cobrado) {
+        return showAlert(currentLang === 'pt' ? 'Preencha origem, destino, ponto de encontro, horário e valor' : 'Fill in origin, destination, meeting point, time and value', 'error');
       }
 
       const btn = document.getElementById('btn-pub');

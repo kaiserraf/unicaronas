@@ -10,7 +10,7 @@ const BCRYPT_ROUNDS = 12;
  */
 const cadastrar = async (req, res, next) => {
   try {
-    const { nome, email, matricula, senha, telefone, curso, dia_ead, perfil_tipo } = req.body;
+    const { nome, email, matricula, senha, telefone, curso, dia_ead, perfil_tipo, veiculo } = req.body;
 
     // Valida domínio de e-mail institucional
     const dominiosPermitidos = (process.env.EMAIL_DOMINIOS || '@uni.edu.br')
@@ -45,18 +45,56 @@ const cadastrar = async (req, res, next) => {
 
     const senhaHash = await bcrypt.hash(senha, BCRYPT_ROUNDS);
 
-    const { rows } = await db.query(
-      `INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso, dia_ead, perfil_tipo)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, nome, email, matricula, curso, dia_ead, perfil_tipo, criado_em`,
-      [nome.trim(), emailNorm, matricula.trim(), senhaHash, telefone || null, curso || null, diaEadVal, perfil_tipo || 'misto']
-    );
+    // Usar transação para salvar usuário e veículo juntos
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
 
-    res.status(201).json({
-      success: true,
-      data: rows[0],
-      message: 'Usuário cadastrado com sucesso',
-    });
+      const resUser = await client.query(
+        `INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso, dia_ead, perfil_tipo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, nome, email, matricula, curso, dia_ead, perfil_tipo, criado_em`,
+        [nome.trim(), emailNorm, matricula.trim(), senhaHash, telefone || null, curso || null, diaEadVal, perfil_tipo || 'misto']
+      );
+
+      const novoUsuario = resUser.rows[0];
+
+      // Se for motorista/misto e enviou dados do veículo, cadastra
+      if ((perfil_tipo === 'motorista' || perfil_tipo === 'misto') && veiculo && veiculo.marca && veiculo.placa) {
+        await client.query(
+          `INSERT INTO veiculos (usuario_id, marca, modelo, ano, cor, placa)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [novoUsuario.id, veiculo.marca.trim(), veiculo.modelo.trim(), parseInt(veiculo.ano), veiculo.cor.trim(), veiculo.placa.trim()]
+        );
+      }
+
+      await client.query('COMMIT');
+      res.status(201).json({
+        success: true,
+        data: novoUsuario,
+        message: 'Usuário cadastrado com sucesso',
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/usuarios/conta
+ * Exclui a conta do usuário logado.
+ */
+const deletarConta = async (req, res, next) => {
+  try {
+    const usuario_id = req.usuario.id;
+    // O banco está configurado com ON DELETE CASCADE, então deletará caronas, mensagens, etc.
+    await db.query('DELETE FROM usuarios WHERE id = $1', [usuario_id]);
+    res.json({ success: true, message: 'Conta excluída com sucesso.' });
   } catch (err) {
     next(err);
   }
@@ -222,4 +260,4 @@ const atualizarPerfil = async (req, res, next) => {
   }
 };
 
-module.exports = { cadastrar, login, buscarPorId, atualizarPerfil };
+module.exports = { cadastrar, login, buscarPorId, atualizarPerfil, deletarConta };

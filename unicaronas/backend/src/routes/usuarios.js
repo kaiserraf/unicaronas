@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const ctrl   = require('../controllers/usuariosController');
-const auth   = require('../middleware/auth');
+const auth   = require('../middleware/auth').verificarToken;
 const upload = require('../middleware/upload');
 const { validar } = require('../middleware/validacao');
 
@@ -28,5 +28,6 @@ router.post('/',        validar(schemasCadastro), ctrl.cadastrar);
 router.post('/login',   validar(schemasLogin),    ctrl.login);
 router.get('/:id',      auth,                     ctrl.buscarPorId);
 router.patch('/perfil', auth, upload.single('foto'), validar(schemaPerfil), ctrl.atualizarPerfil);
+router.delete('/conta', auth,                     ctrl.deletarConta);
 
 module.exports = router;

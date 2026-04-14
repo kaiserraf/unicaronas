@@ -127,7 +127,8 @@ const api = {
   }),
 
   enviarMensagem:      (body) => request('/mensagens', { method: 'POST', body: JSON.stringify(body) }),
-  listarMensagens:     (sid)  => request(`/mensagens/${sid}`),
+  listarMensagens:     (id, isUser = false)  => request(`/mensagens/${id}${isUser ? '?is_user=true' : ''}`),
+  listarConversas:     ()     => request('/mensagens/conversas'),
   contagemNaoLidas:    ()     => request('/mensagens/nao-lidas'),
 
   pagar:               (body) => request('/pagamentos', { method: 'POST', body: JSON.stringify(body) }),
@@ -135,6 +136,12 @@ const api = {
 
   avaliar:    (body) => request('/avaliacoes', { method: 'POST', body: JSON.stringify(body) }),
   avaliacoes: (uid)  => request(`/avaliacoes/${uid}`),
+
+  // Veículos
+  cadastrarVeiculo: (body) => request('/veiculos', { method: 'POST', body: JSON.stringify(body) }),
+  listarVeiculos:   ()     => request('/veiculos'),
+  atualizarVeiculo: (id, body) => request(`/veiculos/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deletarVeiculo:   (id)   => request(`/veiculos/${id}`, { method: 'DELETE' }),
 };
 
 // Polling global para badges

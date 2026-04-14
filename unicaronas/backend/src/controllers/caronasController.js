@@ -10,9 +10,22 @@ const criar = async (req, res, next) => {
   try {
     const {
       origem, destino, horario_partida, vagas_totais,
-      valor_cobrado, distancia_km, observacoes, recorrente
+      valor_cobrado, distancia_km, observacoes, recorrente,
+      veiculo_id, ponto_encontro, ponto_encontro_detalhes
     } = req.body;
     const motorista_id = req.usuario.id;
+
+    if (!ponto_encontro || !ponto_encontro.trim()) {
+      return res.status(400).json({ success: false, error: 'O ponto de encontro é obrigatório.' });
+    }
+
+    // Se veiculo_id for fornecido, validar que pertence ao usuário
+    if (veiculo_id) {
+      const veiculoCheck = await db.query('SELECT id FROM veiculos WHERE id = $1 AND usuario_id = $2', [veiculo_id, motorista_id]);
+      if (veiculoCheck.rows.length === 0) {
+        return res.status(400).json({ success: false, error: 'Veículo inválido ou não pertence ao usuário.' });
+      }
+    }
 
     // Busca dia_ead do usuário
     const { rows: userRows } = await db.query('SELECT dia_ead FROM usuarios WHERE id = $1', [motorista_id]);
@@ -62,15 +75,18 @@ const criar = async (req, res, next) => {
 
     const { rows } = await db.query(
       `INSERT INTO caronas
-         (motorista_id, origem, destino, horario_partida, vagas_totais, vagas_disponiveis,
+         (motorista_id, veiculo_id, origem, destino, ponto_encontro, ponto_encontro_detalhes, horario_partida, vagas_totais, vagas_disponiveis,
           valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
-       VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         motorista_id,
+        veiculo_id || null,
         origem.trim(),
         destino.trim(),
-        horario.toISOString(),
+        ponto_encontro.trim(),
+        ponto_encontro_detalhes?.trim() || null,
+        horario_partida, // Usa a string original para preservar o tempo local se o banco for compatível
         vagas,
         valor_sugerido,
         valor,
@@ -89,6 +105,11 @@ const criar = async (req, res, next) => {
         const novaData = new Date(horario);
         novaData.setDate(novaData.getDate() + (semanasAvancadas * 7));
         
+        // Corrige possível deslocamento de fuso ao adicionar dias (garante mesma hora/min)
+        if (novaData.getHours() !== horario.getHours()) {
+           novaData.setHours(horario.getHours());
+        }
+
         // Verifica se a nova data cai no dia EAD
         if (dia_ead !== null && novaData.getDay() === dia_ead) {
           const dataFormatada = novaData.toLocaleDateString('pt-BR');
@@ -98,11 +119,19 @@ const criar = async (req, res, next) => {
           continue; // Pula esta semana e tenta a próxima
         }
 
+        // Formata manualmente para evitar problemas de ISO/UTC se necessário, 
+        // ou usa a data ajustada. Aqui usamos uma aproximação segura:
+        const novaDataStr = novaData.getFullYear() + '-' + 
+          String(novaData.getMonth() + 1).padStart(2, '0') + '-' + 
+          String(novaData.getDate()).padStart(2, '0') + 'T' + 
+          String(novaData.getHours()).padStart(2, '0') + ':' + 
+          String(novaData.getMinutes()).padStart(2, '0');
+
         await db.query(
-          `INSERT INTO caronas (motorista_id, origem, destino, horario_partida, vagas_totais, 
+          `INSERT INTO caronas (motorista_id, veiculo_id, origem, destino, ponto_encontro, ponto_encontro_detalhes, horario_partida, vagas_totais, 
            vagas_disponiveis, valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
-           VALUES ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, true)`,
-          [motorista_id, origem.trim(), destino.trim(), novaData.toISOString(), vagas, valor_sugerido, valor, distancia, observacoes?.trim() || null]
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, true)`,
+          [motorista_id, veiculo_id || null, origem.trim(), destino.trim(), ponto_encontro.trim(), ponto_encontro_detalhes?.trim() || null, novaDataStr, vagas, valor_sugerido, valor, distancia, observacoes?.trim() || null]
         );
         
         criadas++;
@@ -183,9 +212,12 @@ const buscarPorId = async (req, res, next) => {
 
     const { rows } = await db.query(
       `SELECT c.*, u.nome AS motorista_nome, u.foto_url AS motorista_foto,
-              u.avaliacao_media AS motorista_avaliacao, u.telefone AS motorista_telefone
+              u.avaliacao_media AS motorista_avaliacao, u.telefone AS motorista_telefone,
+              v.marca AS veiculo_marca, v.modelo AS veiculo_modelo, v.ano AS veiculo_ano,
+              v.cor AS veiculo_cor, v.placa AS veiculo_placa
        FROM caronas c
        JOIN usuarios u ON u.id = c.motorista_id
+       LEFT JOIN veiculos v ON v.id = c.veiculo_id
        WHERE c.id = $1`,
       [id]
     );
@@ -194,7 +226,29 @@ const buscarPorId = async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Carona não encontrada' });
     }
 
-    res.json({ success: true, data: rows[0] });
+    const data = rows[0];
+
+    // Formatar veiculo como objeto se existir
+    if (data.veiculo_marca) {
+      data.veiculo = {
+        marca: data.veiculo_marca,
+        modelo: data.veiculo_modelo,
+        ano: data.veiculo_ano,
+        cor: data.veiculo_cor,
+        placa: data.veiculo_placa
+      };
+    } else {
+      data.veiculo = null;
+    }
+    
+    // Remover chaves auxiliares
+    delete data.veiculo_marca;
+    delete data.veiculo_modelo;
+    delete data.veiculo_ano;
+    delete data.veiculo_cor;
+    delete data.veiculo_placa;
+
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
@@ -277,9 +331,11 @@ const listarSolicitacoes = async(req, res, next) => {
           u.id AS passageiro_id,
           u.nome AS passageiro_nome,
           u.curso AS passageiro_curso,
-          u.avaliacao_media AS passageiro_avaliacao
+          u.avaliacao_media AS passageiro_avaliacao,
+          p.status AS pagamento_status
         FROM solicitacoes_carona s
         JOIN usuarios u ON u.id = s.passageiro_id
+        LEFT JOIN pagamentos p ON p.solicitacao_id = s.id
         WHERE s.carona_id = $1
         ORDER BY s.criado_em ASC`,
       [carona_id]
@@ -376,7 +432,10 @@ const minhaSolicitacao = async (req, res, next) => {
     const passageiro_id = req.usuario.id;
 
     const { rows } = await db.query(
-      'SELECT * FROM solicitacoes_carona WHERE carona_id = $1 AND passageiro_id = $2',
+      `SELECT s.*, p.status AS pagamento_status
+       FROM solicitacoes_carona s
+       LEFT JOIN pagamentos p ON p.solicitacao_id = s.id
+       WHERE s.carona_id = $1 AND s.passageiro_id = $2`,
       [carona_id, passageiro_id]
     );
 

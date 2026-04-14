@@ -18,7 +18,7 @@
   };
 
   // ── Constantes ───────────────────────────────────────────────────────────────
-  const POLL_INTERVAL = 5000;
+  const POLL_INTERVAL = 3000;
   const STORAGE_KEY   = 'unicaronas_chat_aberto';
 
   // ── Inicialização ────────────────────────────────────────────────────────────
@@ -79,11 +79,16 @@
         </div>
 
         <!-- Lista de conversas -->
-        <div id="uc-lista-conversas" class="uc-screen">
-          <div id="uc-conversas-inner">
+        <div id="uc-lista-conversas" class="uc-screen" style="position:relative;">
+          <div id="uc-conversas-inner" style="flex:1; overflow-y:auto; padding-bottom: 50px;">
             <div class="uc-loading">
               <div class="uc-spinner"></div>
             </div>
+          </div>
+          <div style="position:absolute; bottom:0; left:0; width:100%; padding:0.5rem; background: var(--surface); border-top: 1px solid var(--border);">
+            <button class="btn btn-ghost btn-sm btn-full" onclick="window.location.href='mensagens.html'" style="color: var(--accent); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+              Ver histórico completo
+            </button>
           </div>
         </div>
 
@@ -942,6 +947,8 @@
     abrirConversa,
     abrirChat,
     fecharChat,
+    estaAberto: () => STATE.aberto,
+    getChatAtivo: () => STATE.ativa,
     recarregar: carregarConversas,
     iniciarChat: iniciarChatComSolicitacao,
   };

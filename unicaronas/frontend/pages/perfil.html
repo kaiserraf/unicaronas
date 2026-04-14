@@ -204,6 +204,11 @@
               <button id="btn-editar-perfil" class="btn btn-primary btn-sm" type="button" data-i18n="profile-edit" hidden>
                 Editar perfil
               </button>
+              <button id="btn-deletar-conta" class="btn btn-outline btn-sm" type="button" 
+                      style="color: var(--error); border-color: var(--error); margin-left: 0.5rem;" 
+                      onclick="confirmarExclusao()" hidden>
+                Excluir conta
+              </button>
             </div>
           </div>
         </div>
@@ -245,6 +250,22 @@
         </div>
 
         <div id="lista-avaliacoes" aria-live="polite"></div>
+      </section>
+
+      <!-- Meus Veículos -->
+      <section id="secao-veiculos" class="role-motorista" style="margin-top: 2.5rem; display: none;">
+        <div class="card-title" style="margin-bottom:1rem;" data-i18n="profile-vehicles">Meus Veículos</div>
+        <div class="card mb-2">
+          <form id="form-veiculo" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <input type="text" id="veiculo-marca" class="form-control" placeholder="Marca (ex: Fiat)" required>
+            <input type="text" id="veiculo-modelo" class="form-control" placeholder="Modelo (ex: Argo)" required>
+            <input type="number" id="veiculo-ano" class="form-control" placeholder="Ano" min="1950" max="2050" required>
+            <input type="text" id="veiculo-cor" class="form-control" placeholder="Cor" required>
+            <input type="text" id="veiculo-placa" class="form-control" placeholder="Placa" required>
+            <button type="submit" class="btn btn-primary" data-i18n="profile-vehicle-add" style="grid-column: 1 / -1;">Adicionar Veículo</button>
+          </form>
+        </div>
+        <div id="lista-veiculos" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
       </section>
 
     </div>

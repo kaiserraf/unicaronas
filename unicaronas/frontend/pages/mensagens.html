@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniCaronas — Mensagens</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .msg-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 0;
+      height: calc(100vh - 140px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .msg-lista {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-2);
+    }
+    
+    .msg-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .msg-lista-inner {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .msg-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .msg-item:hover { background: var(--surface); }
+    .msg-item.active { background: var(--surface); border-left: 3px solid var(--accent); padding-left: calc(1.25rem - 3px); }
+    
+    .msg-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #22d3a0);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; flex-shrink: 0;
+    }
+    
+    .msg-info { flex: 1; min-width: 0; }
+    .msg-nome { font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-preview { font-size: 0.8rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .msg-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; flex-shrink: 0; }
+    .msg-time { font-size: 0.7rem; color: var(--text-3); font-family: var(--font-mono); }
+    .msg-unread {
+      background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 800;
+      width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+    
+    .msg-chat {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+    }
+    
+    .chat-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-nome { font-weight: 700; font-size: 1.05rem; }
+    .chat-header-curso { font-size: 0.8rem; color: var(--text-3); }
+    
+    .btn-back-mobile { display: none; background: none; border: none; color: var(--text-2); cursor: pointer; padding: 0.5rem; margin-left: -0.5rem; }
+    
+    .chat-body {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .bubble-row { display: flex; flex-direction: column; max-width: 75%; }
+    .bubble-eu { align-self: flex-end; align-items: flex-end; }
+    .bubble-outro { align-self: flex-start; align-items: flex-start; }
+    
+    .bubble {
+      padding: 0.65rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .bubble-eu .bubble {
+      background: var(--accent); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-outro .bubble {
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .bubble-hora { font-size: 0.65rem; color: var(--text-3); margin-top: 0.25rem; font-family: var(--font-mono); }
+    
+    .chat-input-area {
+      padding: 1rem;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      outline: none;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-btn-send {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-md);
+      padding: 0 1.25rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .chat-btn-send:hover { background: var(--accent-2); }
+    .chat-btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .empty-chat-state {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-3); text-align: center; padding: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      .msg-layout { grid-template-columns: 1fr; }
+      .msg-chat { display: none; }
+      .msg-lista { border-right: none; }
+      .btn-back-mobile { display: block; }
+      .msg-layout.chat-open .msg-lista { display: none; }
+      .msg-layout.chat-open .msg-chat { display: flex; }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar" aria-label="Navegação principal">
+  <div class="container" style="position: relative;">
+    <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('active')">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="../pages/dashboard.html" class="navbar-brand">Uni<span>Caronas</span></a>
+    
+    <ul class="navbar-links" role="list" style="list-style:none;">
+      <li><a href="../pages/dashboard.html" data-i18n="nav-dashboard">Painel <span id="nav-painel-badge" class="nav-badge" style="display: none;">0</span></a></li>
+      <li id="nav-buscar-wrap"><a href="../pages/buscar.html" data-i18n="nav-buscar">Buscar carona</a></li>
+      <li id="nav-oferecer-wrap"><a href="../pages/criar-carona.html" data-i18n="nav-oferecer">Oferecer carona</a></li>
+      <li id="nav-gerenciar-wrap"><a href="../pages/gerenciar-caronas.html" data-i18n="nav-gerenciar">Gerenciar caronas</a></li>
+      <li><a href="../pages/mensagens.html" aria-current="page" data-i18n="nav-mensagens">Mensagens</a></li>
+      <li><a href="../pages/perfil.html" data-i18n="nav-perfil">Perfil</a></li>
+    </ul>
+    <button class="btn btn-ghost btn-sm" id="btn-logout" type="button" data-i18n="nav-sair">Sair</button>
+  </div>
+</nav>
+
+  <main class="container" style="padding-top:1.5rem; padding-bottom: 2rem;">
+    <div class="msg-layout" id="msg-layout">
+      <!-- Lista de Conversas -->
+      <div class="msg-lista">
+        <div class="msg-header">
+          <span data-i18n="nav-mensagens">Mensagens</span>
+        </div>
+        <div class="msg-lista-inner" id="lista-conversas">
+          <div style="padding: 2rem; text-align: center; color: var(--text-3);">Carregando...</div>
+        </div>
+      </div>
+      
+      <!-- Chat Aberto -->
+      <div class="msg-chat">
+        <div id="chat-vazio" class="empty-chat-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.5rem;">Suas mensagens</div>
+          <div>Selecione uma conversa ao lado para começar.</div>
+        </div>
+        
+        <div id="chat-ativo" style="display: none; flex-direction: column; height: 100%;">
+          <div class="chat-header">
+            <button class="btn-back-mobile" onclick="fecharChatMobile()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="msg-avatar" id="chat-avatar">?</div>
+            <div class="chat-header-info">
+              <div class="chat-header-nome" id="chat-nome">Usuário</div>
+              <div class="chat-header-curso" id="chat-curso">Curso</div>
+            </div>
+          </div>
+          
+          <div class="chat-body" id="chat-body">
+            <!-- Mensagens injetadas aqui -->
+          </div>
+          
+          <form class="chat-input-area" id="form-msg">
+            <input type="text" class="chat-input" id="input-msg" placeholder="Digite uma mensagem..." autocomplete="off">
+            <button type="submit" class="chat-btn-send" id="btn-enviar" data-i18n="msg-send">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script>
+    protegerRota();
+    const usuarioLogado = getUser();
+    
+    let conversas = [];
+    let conversaAtiva = null;
+    let mensagensInterval = null;
+    let conversasInterval = null;
+
+    async function carregarConversas() {
+      try {
+        const res = await api.listarConversas();
+        conversas = res.data || [];
+        renderConversas();
+      } catch (err) {
+        document.getElementById('lista-conversas').innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--red);">${err.message}</div>`;
+      }
+    }
+
+    function renderConversas() {
+      const container = document.getElementById('lista-conversas');
+      
+      if (conversas.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 3rem 1.5rem; text-align: center; color: var(--text-3);">
+            <div style="font-weight: 600; color: var(--text-2); margin-bottom: 0.5rem;" data-i18n="msg-empty-inbox">Nenhuma conversa ainda</div>
+            <div style="font-size: 0.85rem;" data-i18n="msg-empty-inbox-sub">Conversas aparecem quando você tem caronas aceitas.</div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = conversas.map(c => {
+        const activeClass = conversaAtiva && conversaAtiva.outro_usuario_id === c.outro_usuario_id ? 'active' : '';
+        const dataStr = new Date(c.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const unread = parseInt(c.nao_lidas) > 0 ? `<div class="msg-unread">${c.nao_lidas}</div>` : '';
+        
+        return `
+          <div class="msg-item ${activeClass}" onclick="abrirConversa(${c.outro_usuario_id})">
+            <div class="msg-avatar">${iniciais(c.outro_usuario_nome)}</div>
+            <div class="msg-info">
+              <div class="msg-nome">${c.outro_usuario_nome}</div>
+              <div class="msg-preview">${c.ultima_mensagem}</div>
+            </div>
+            <div class="msg-meta">
+              <div class="msg-time">${dataStr}</div>
+              ${unread}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function abrirConversa(outro_usuario_id) {
+      const c = conversas.find(x => x.outro_usuario_id === outro_usuario_id);
+      if (!c) return;
+      
+      conversaAtiva = c;
+      c.nao_lidas = 0; // zera localmente
+      renderConversas(); // atualiza classe active e tira badge
+      
+      // Atualiza layout para mobile
+      document.getElementById('msg-layout').classList.add('chat-open');
+      
+      // Atualiza header
+      document.getElementById('chat-vazio').style.display = 'none';
+      document.getElementById('chat-ativo').style.display = 'flex';
+      document.getElementById('chat-avatar').textContent = iniciais(c.outro_usuario_nome);
+      document.getElementById('chat-nome').textContent = c.outro_usuario_nome;
+      document.getElementById('chat-curso').textContent = c.outro_usuario_curso || 'UniCaronas';
+      
+      await carregarMensagens();
+      
+      if (mensagensInterval) clearInterval(mensagensInterval);
+      mensagensInterval = setInterval(carregarMensagens, 3000);
+      
+      document.getElementById('input-msg').focus();
+    }
+    
+    function fecharChatMobile() {
+      document.getElementById('msg-layout').classList.remove('chat-open');
+      conversaAtiva = null;
+      renderConversas();
+      if (mensagensInterval) {
+        clearInterval(mensagensInterval);
+        mensagensInterval = null;
+      }
+    }
+
+    async function carregarMensagens() {
+      if (!conversaAtiva) return;
+      try {
+        const res = await api.listarMensagens(conversaAtiva.outro_usuario_id, true);
+        renderMensagens(res.data || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderMensagens(msgs) {
+      const body = document.getElementById('chat-body');
+      const isScrolledToBottom = body.scrollHeight - body.clientHeight <= body.scrollTop + 50;
+      
+      if (msgs.length === 0) {
+        body.innerHTML = '<div style="text-align: center; color: var(--text-3); font-size: 0.9rem; margin-top: 2rem;">Início da conversa</div>';
+        return;
+      }
+
+      body.innerHTML = msgs.map(m => {
+        const eu = m.remetente_id === usuarioLogado.id;
+        const cls = eu ? 'bubble-eu' : 'bubble-outro';
+        const hora = new Date(m.enviado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        return `
+          <div class="bubble-row ${cls}">
+            <div class="bubble">${String(m.conteudo).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            <div class="bubble-hora">${hora}</div>
+          </div>
+        `;
+      }).join('');
+      
+      if (isScrolledToBottom || msgs.length < 10) {
+        body.scrollTop = body.scrollHeight;
+      }
+    }
+
+    document.getElementById('form-msg').onsubmit = async (e) => {
+      e.preventDefault();
+      if (!conversaAtiva) return;
+      
+      const input = document.getElementById('input-msg');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      input.value = '';
+      const btn = document.getElementById('btn-enviar');
+      btn.disabled = true;
+      
+      try {
+        await api.enviarMensagem({
+          destinatario_id: conversaAtiva.outro_usuario_id,
+          conteudo: text,
+          tipo_conversa: 'geral'
+        });
+        await carregarMensagens();
+        carregarConversas(); // atualiza a lista à esquerda
+      } catch (err) {
+        showAlert(err.message, 'error');
+        input.value = text;
+      } finally {
+        btn.disabled = false;
+        input.focus();
+        setTimeout(() => {
+          const body = document.getElementById('chat-body');
+          body.scrollTop = body.scrollHeight;
+        }, 100);
+      }
+    };
+
+    carregarConversas();
+    conversasInterval = setInterval(carregarConversas, 10000);
+    
+    document.getElementById('btn-logout')?.addEventListener('click', () => logout());
+  </script>
+</body>
+</html>

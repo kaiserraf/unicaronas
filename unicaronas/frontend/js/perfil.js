@@ -29,7 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderStats(resU.data);
     renderAvaliacoes(resAv.data);
     renderHistorico(resHis.data);
-    if (ehProprio) initEdicao(resU.data);
+    
+    if (ehProprio) {
+      initEdicao(resU.data);
+      if (resU.data.perfil_tipo !== 'estudante') {
+        document.getElementById('secao-veiculos').style.display = 'block';
+        carregarVeiculos();
+        initFormVeiculo();
+      }
+    }
 
   } catch (err) {
     console.error('Erro ao carregar perfil:', err);
@@ -63,11 +71,30 @@ function renderPerfil(u, ehProprio) {
   document.title = u.nome + ' — UniCaronas';
 
   const btn = document.getElementById('btn-editar-perfil');
+  const btnDel = document.getElementById('btn-deletar-conta');
   if (ehProprio) { 
     btn.removeAttribute('hidden'); 
     btn.onclick = abrirModal; 
+    if (btnDel) btnDel.removeAttribute('hidden');
   } else {
     btn.setAttribute('hidden', '');
+    if (btnDel) btnDel.setAttribute('hidden', '');
+  }
+}
+
+async function confirmarExclusao() {
+  const msg = currentLang === 'pt' 
+    ? 'TEM CERTEZA? Esta ação é irreversível e excluirá todos os seus dados, caronas e mensagens.' 
+    : 'ARE YOU SURE? This action is irreversible and will delete all your data, rides, and messages.';
+  
+  if (confirm(msg)) {
+    try {
+      await api.deletarConta();
+      showAlert(currentLang === 'pt' ? 'Conta excluída com sucesso.' : 'Account deleted successfully.', 'success');
+      setTimeout(() => logout(), 2000);
+    } catch (err) {
+      showAlert(err.message || (currentLang === 'pt' ? 'Erro ao excluir conta' : 'Error deleting account'), 'error');
+    }
   }
 }
 
@@ -273,5 +300,67 @@ function atualizarPreviewFoto(url, nome) {
     box.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
   } else {
     box.innerHTML = `<span class="foto-preview-iniciais">${iniciais(nome)}</span>`;
+  }
+}
+
+// ── Veículos ──────────────────────────────────────────────────────────────────
+
+async function carregarVeiculos() {
+  const container = document.getElementById('lista-veiculos');
+  try {
+    const res = await api.listarVeiculos();
+    if (res.data.length === 0) {
+      container.innerHTML = '<p class="text-muted" style="font-size: 0.9rem;">Nenhum veículo cadastrado.</p>';
+      return;
+    }
+    container.innerHTML = res.data.map(v => `
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+        <div>
+          <strong>${v.marca} ${v.modelo}</strong> (${v.ano})
+          <div style="font-size: 0.85rem; color: var(--text-3); font-family: var(--font-mono);">Placa: ${v.placa} | Cor: ${v.cor}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removerVeiculo(${v.id})">Remover</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<p class="text-muted" style="color: var(--red);">${err.message}</p>`;
+  }
+}
+
+function initFormVeiculo() {
+  const form = document.getElementById('form-veiculo');
+  if (!form) return;
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+      const payload = {
+        marca: document.getElementById('veiculo-marca').value,
+        modelo: document.getElementById('veiculo-modelo').value,
+        ano: document.getElementById('veiculo-ano').value,
+        cor: document.getElementById('veiculo-cor').value,
+        placa: document.getElementById('veiculo-placa').value,
+      };
+      await api.cadastrarVeiculo(payload);
+      showAlert('Veículo cadastrado!', 'success');
+      form.reset();
+      carregarVeiculos();
+    } catch (err) {
+      showAlert(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  };
+}
+
+async function removerVeiculo(id) {
+  if (!confirm('Deseja realmente remover este veículo?')) return;
+  try {
+    await api.deletarVeiculo(id);
+    showAlert('Veículo removido!', 'success');
+    carregarVeiculos();
+  } catch (err) {
+    showAlert(err.message, 'error');
   }
 }

@@ -37,13 +37,31 @@ CREATE INDEX idx_usuarios_email     ON usuarios (email);
 CREATE INDEX idx_usuarios_matricula ON usuarios (matricula);
 
 -- =============================================================
+-- TABELA: veiculos
+-- =============================================================
+CREATE TABLE veiculos (
+  id               SERIAL PRIMARY KEY,
+  usuario_id       INT           NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  marca            VARCHAR(100)  NOT NULL,
+  modelo           VARCHAR(100)  NOT NULL,
+  ano              INT           NOT NULL,
+  cor              VARCHAR(50)   NOT NULL,
+  placa            VARCHAR(20)   NOT NULL,
+  foto_url         VARCHAR(255),
+  criado_em        TIMESTAMP     NOT NULL DEFAULT NOW()
+);
+
+-- =============================================================
 -- TABELA: caronas
 -- =============================================================
 CREATE TABLE caronas (
   id                        SERIAL PRIMARY KEY,
   motorista_id              INT           NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  veiculo_id                INT           REFERENCES veiculos(id) ON DELETE SET NULL,
   origem                    VARCHAR(200)  NOT NULL,
   destino                   VARCHAR(200)  NOT NULL,
+  ponto_encontro            VARCHAR(150)  NOT NULL,
+  ponto_encontro_detalhes   TEXT,
   horario_partida           TIMESTAMP     NOT NULL,
   vagas_totais              INT           NOT NULL CHECK (vagas_totais > 0),
   vagas_disponiveis         INT           NOT NULL CHECK (vagas_disponiveis >= 0),

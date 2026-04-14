@@ -1,209 +1,107 @@
-# UniCaronas
+# UniCaronas 🚗💨
 
-Sistema web de caronas universitárias — conecta estudantes da mesma instituição para compartilhar trajetos de forma segura e econômica.
+**Conectando estudantes para trajetos seguros, econômicos e sustentáveis.**
 
----
-
-## Funcionalidades
-
-- **Autenticação Segura**: Login e cadastro com validação de e-mail institucional.
-- **Dashboard Inteligente**: Visão geral com estatísticas de caronas disponíveis, viagens agendadas e avaliação média.
-- **Busca Avançada**: Filtros por origem, destino, data e preço máximo.
-- **Criação de Carona**: Sugestão automática de preço baseada na distância (R$ 0,30/km) e suporte a **caronas recorrentes** (semanais).
-- **Mapa Interativo**: Visualização do trajeto com marcadores de origem e destino via Leaflet.js.
-- **Gestão de Vagas**: Sistema de solicitação com aprovação ou recusa pelo motorista e atualização automática de vagas.
-- **Chat em Tempo Real**: Conversa integrada entre motorista e passageiro para combinar detalhes.
-- **Pagamentos Flexíveis**: Suporte a PIX, Cartão e Dinheiro com cálculo automático de taxa da plataforma (10%).
-- **Perfil do Usuário**: Upload de foto, histórico de viagens concluídas e sistema de avaliações com estrelas.
-- **Internacionalização**: Suporte completo a Português (PT), Inglês (EN) e Espanhol (ES).
-- **Design Responsivo**: Interface moderna e otimizada para dispositivos móveis e desktop.
+O **UniCaronas** é uma plataforma web desenvolvida para facilitar a carona solidária entre membros da mesma instituição de ensino. O sistema otimiza o uso de veículos particulares, reduz custos de deslocamento e fortalece a comunidade acadêmica.
 
 ---
 
-## Tecnologias
+## ✨ Funcionalidades Principais
 
-| Camada | Tecnologia | Versão |
-|--------|------------|--------|
-| Frontend | HTML5, CSS3, JavaScript Vanilla | — |
-| Backend | Node.js | ^18.0.0 |
-| Framework Web | Express | ^4.19.2 |
-| Banco de Dados | PostgreSQL | ^14.0.0 |
-| Autenticação | JSON Web Token (JWT) | ^9.0.2 |
-| Mapas | Leaflet.js | 1.9.4 |
-| Estilização | Google Fonts (DM Sans, DM Mono) | — |
-
----
-
-## Pré-requisitos
-
-Antes de começar, instale:
-
-- [Node.js](https://nodejs.org) — versão 18 ou superior
-- [PostgreSQL](https://www.postgresql.org/download/) — versão 14 ou superior
-- [Git](https://git-scm.com/)
-- Extensão **Live Server** no VSCode (de Ritwick Dey)
+- **👤 Perfil Personalizado**: Escolha seu papel como **Passageiro**, **Motorista** ou **Misto**.
+- **📊 Dashboard Inteligente**: Mensagens dinâmicas e estatísticas em tempo real baseadas no seu perfil.
+- **🚗 Cadastro de Veículo Integrado**: Motoristas registram seus veículos diretamente no cadastro para maior agilidade.
+- **🔍 Busca com Filtros**: Encontre caronas por origem, destino, data e preço.
+- **📅 Caronas Recorrentes**: Opção de criar caronas semanais automaticamente.
+- **💬 Chat em Tempo Real**: Combine detalhes diretamente com o motorista ou passageiros.
+- **📍 Mapas Interativos**: Visualização de rotas via Leaflet.js integrada à geocodificação.
+- **💳 Pagamento e Taxas**: Suporte a múltiplos métodos de pagamento com cálculo automático da taxa da plataforma (10%).
+- **⭐ Sistema de Avaliações**: Histórico de confiança com notas e comentários após cada viagem.
+- **🗑️ Gestão de Conta**: Liberdade para o usuário gerenciar seus dados ou excluir sua conta permanentemente.
+- **🌐 Internacionalização**: Interface multilíngue com suporte a **Português (PT)**, **Inglês (EN)** e **Espanhol (ES)**.
 
 ---
 
-## Como rodar o projeto
+## 🛠️ Tecnologias Utilizadas
 
-### 1. Clonar o repositório
+| Camada | Tecnologia |
+|--------|------------|
+| **Frontend** | HTML5, CSS3 Moderno, JavaScript Vanilla |
+| **Backend** | Node.js (Express) |
+| **Banco de Dados** | PostgreSQL |
+| **Segurança** | JSON Web Token (JWT) e Bcrypt (Criptografia) |
+| **Mapas** | Leaflet.js & Nominatim |
+| **Uploads** | Multer (Processamento de imagens) |
 
+---
+
+## 🚀 Como Executar o Projeto
+
+### Pré-requisitos
+- **Node.js** v18+
+- **PostgreSQL** v14+
+- Extensão **Live Server** no VSCode
+
+### 1. Preparação do Banco de Dados
 ```bash
-git clone https://github.com/seu-usuario/unicaronas.git
-cd unicaronas
-```
-
-### 2. Criar o banco de dados
-
-Execute no terminal:
-
-```bash
+# Crie o banco
 psql -U postgres -c "CREATE DATABASE unicaronas;"
-```
 
-Depois crie as tabelas e insira os dados de teste:
-
-```bash
-# Entrar na pasta do banco
-cd unicaronas/database
-
-# Criar tabelas
+# Navegue até a pasta do banco e execute os scripts
+cd database
 psql -U postgres -d unicaronas -f schema.sql
-
-# Inserir dados de teste
 psql -U postgres -d unicaronas -f data.sql
 ```
 
-### 3. Configurar as variáveis de ambiente
+### 2. Configuração do Backend
+1. Entre na pasta `backend`.
+2. Instale as dependências: `npm install`.
+3. Configure o arquivo `.env` (use o `.env.example` como base).
+4. Inicie o servidor: `npm run dev`.
 
-Crie o arquivo `.env` na pasta `backend`:
-
-```bash
-cd ../backend
-cp .env.example .env
-```
-
-Edite o `.env` com suas credenciais:
-
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `PORT` | Porta do servidor | `3000` |
-| `NODE_ENV` | Ambiente de execução | `development` |
-| `DB_HOST` | Host do banco | `localhost` |
-| `DB_PORT` | Porta do banco | `5432` |
-| `DB_NAME` | Nome do banco | `unicaronas` |
-| `DB_USER` | Usuário do banco | `postgres` |
-| `DB_PASSWORD` | Senha do banco | `suasenha` |
-| `JWT_SECRET` | Segredo para o token | `texto_secreto_aqui` |
-| `FRONTEND_URL` | URL do Live Server | `http://localhost:5500` |
-| `EMAIL_DOMINIOS`| Domínios permitidos | `@uni.edu.br,@universidade.edu.br` |
-| `CUSTO_POR_KM` | Valor base da carona | `0.30` |
-| `TAXA_PLATAFORMA_PERCENT` | Taxa do sistema | `10` |
-
-### 4. Iniciar o Backend
-
-```bash
-npm install
-npm run dev
-```
-
-### 5. Iniciar o Frontend
-
-Com o backend rodando, abra o VSCode e execute o arquivo `frontend/pages/login.html` com o **Live Server**.
+### 3. Execução do Frontend
+1. Abra a pasta `frontend` no VSCode.
+2. Clique com o botão direito em `pages/login.html` e selecione **"Open with Live Server"**.
 
 ---
 
-## Estrutura do projeto
+## 📂 Estrutura de Pastas
 
 ```
 unicaronas/
-├── backend/
-│   ├── config/
-│   │   └── database.js          # Configuração do Pool do PostgreSQL
-│   ├── src/
-│   │   ├── controllers/         # Lógica de negócio (Caronas, Usuários, etc)
-│   │   ├── middleware/          # Auth JWT, Upload (Multer), Validação
-│   │   ├── routes/              # Definição dos endpoints da API
-│   │   └── utils/               # Utilitário de precificação por distância
-│   ├── uploads/                 # Armazenamento de fotos de perfil
-│   ├── server.js                # Ponto de entrada (Express + Middlewares)
-│   └── package.json             # Dependências e scripts (start, dev)
-├── database/
-│   ├── schema.sql               # Estrutura das tabelas e triggers
-│   └── data.sql                 # Dados de semente para teste
-├── docs/                        # Documentação técnica (sprints e resultados)
-│   ├── sprints/                 # Planejamento, requisitos e design
-│   └── resultados-sprint/       # Relatórios e entregáveis (pitch, etc)
-├── frontend/
-│   ├── css/
-│   │   └── style.css            # Design System, Layout Desktop e Mobile
-│   ├── js/
-│   │   ├── api.js               # Cliente de API e polling de notificações
-│   │   ├── chat-global.js       # Widget de chat global (polling 5s)
-│   │   ├── i18n.js              # Sistema de tradução (PT/EN/ES)
-│   │   └── perfil.js            # Lógica de renderização do perfil
-│   └── pages/                   # Telas da aplicação (HTML Vanilla)
-│       ├── login.html           # Acesso ao sistema
-│       ├── dashboard.html       # Painel principal do usuário
-│       ├── buscar.html          # Busca com grade de resultados
-│       ├── carona.html          # Detalhes, Mapa e Chat lateral
-│       ├── perfil.html          # Perfil, Histórico e Avaliações
-│       └── pagamento.html       # Checkout de reserva
-└── README.md
+├── backend/             # API REST (Node/Express)
+│   ├── src/controllers/ # Regras de negócio
+│   ├── src/routes/      # Endpoints da API
+│   └── uploads/         # Armazenamento de fotos de perfil
+├── database/            # Scripts SQL (Schema e Dados)
+├── frontend/            # Interface Web (SPA-like)
+│   ├── js/              # Lógica, API Client e i18n
+│   ├── css/             # Estilização Global e Responsiva
+│   └── pages/           # Telas (HTML)
+└── docs/                # Documentação Acadêmica (Sprints)
 ```
 
 ---
 
-## Rotas da API
+## 📝 Rotas Principais (API)
 
-| Método | Rota | Auth | Descrição |
-|--------|------|------|-----------|
-| **Usuários** | | | |
-| POST | `/api/usuarios` | Não | Cadastrar novo usuário |
-| POST | `/api/usuarios/login` | Não | Autenticação |
-| GET | `/api/usuarios/:id` | Sim | Ver perfil de um usuário |
-| PATCH | `/api/usuarios/perfil` | Sim | Atualizar dados e foto |
-| **Caronas** | | | |
-| GET | `/api/caronas` | Não | Listar caronas com filtros |
-| POST | `/api/caronas` | Sim | Criar carona (campo `recorrente: true` cria +3 semanas) |
-| GET | `/api/caronas/:id` | Não | Detalhes da carona |
-| GET | `/api/caronas/historico/:uid`| Sim | Histórico de caronas concluídas |
-| PATCH | `/api/caronas/:id/concluir` | Sim | Finalizar viagem |
-| **Solicitações** | | | |
-| POST | `/api/caronas/:id/solicitar` | Sim | Pedir vaga em carona |
-| GET | `/api/caronas/:id/solicitacoes`| Sim | Listar pedidos (para motorista) |
-| PATCH | `/api/caronas/solicitacoes/:id`| Sim | Aceitar/Recusar pedido |
-| GET | `/api/caronas/solicitacoes/pendentes`| Sim | Contagem de novos pedidos |
-| **Chat & Mensagens** | | | |
-| POST | `/api/mensagens` | Sim | Enviar mensagem |
-| GET | `/api/mensagens/:sid` | Sim | Histórico da conversa |
-| GET | `/api/mensagens/nao-lidas` | Sim | Contagem de mensagens novas |
-| **Avaliações & Pagamento** | | | |
-| POST | `/api/avaliacoes` | Sim | Avaliar participante de carona concluída |
-| GET | `/api/avaliacoes/:uid` | Não | Ver avaliações recebidas por um usuário |
-| POST | `/api/pagamentos` | Sim | Processar pagamento da vaga |
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/api/usuarios` | Registro com suporte a veículo |
+| `DELETE`| `/api/usuarios/conta` | Exclusão permanente de conta |
+| `POST` | `/api/caronas` | Criação de carona (Simples ou Recorrente) |
+| `GET`  | `/api/caronas` | Listagem com filtros de busca |
+| `POST` | `/api/mensagens` | Envio de mensagens no chat |
+| `POST` | `/api/pagamentos`| Processamento de reserva de vaga |
 
 ---
 
-## Problemas comuns
+## 👥 Equipe de Desenvolvimento
 
-- **Erro de CORS**: Certifique-se que o `FRONTEND_URL` no `.env` corresponde exatamente à URL do Live Server (incluindo a porta).
-- **Token Expirado**: Se receber erro 401, faça logout e login novamente para renovar o token JWT.
-- **Geocodificação no Mapa**: O mapa utiliza Nominatim. Se o endereço não for encontrado, o mapa será ocultado silenciosamente.
-- **Porta em Uso**: Se a porta 3000 estiver ocupada, altere a `PORT` no `.env` e a `API_URL` em `frontend/js/api.js`.
-
----
-
-## Time
-
-| Nome | Função |
-|------|--------|
-| **Ariane Archanjo** | Scrum Master |
-| **Matheus Sizanoski** | Dev |
-| **Pedro Kafka** | Dev |
-| **Rafael Machado** | Product Owner |
+- **Ariane Archanjo** — *Scrum Master*
+- **Matheus Sizanoski** — *Fullstack Developer*
+- **Pedro Kafka** — *Fullstack Developer*
+- **Rafael Machado** — *Product Owner*
 
 ---
-
-Projeto acadêmico — Engenharia de Software
+*Projeto acadêmico para o curso de Engenharia de Software — 2026*

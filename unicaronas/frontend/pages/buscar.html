@@ -103,7 +103,10 @@
             <span class="local">${c.destino}</span>
             ${c.recorrente ? `<span class="badge-semanal">Semanal</span>` : ''}
           </div>
-          <div class="carona-meta">
+          <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-weight: 500;">
+            <span style="color: var(--accent);">📍 Ponto de encontro:</span> ${c.ponto_encontro}
+          </div>
+          <div class="carona-meta" style="margin-top: 0.75rem;">
             <div class="meta-item">
               <span class="meta-label">${t('card-time')}</span>
               <span class="meta-value">${formatarData(c.horario_partida)}</span>

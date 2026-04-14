@@ -198,6 +198,34 @@
         </select>
       </div>
 
+      <div id="veiculo-section" style="display:none; border-top: 1px solid var(--border); margin-top: 1.5rem; padding-top: 1.5rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 1rem;">Dados do Veículo</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input class="form-control" id="v-marca" type="text" placeholder="Ex: Toyota">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <input class="form-control" id="v-modelo" type="text" placeholder="Ex: Corolla">
+          </div>
+        </div>
+        <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Ano</label>
+            <input class="form-control" id="v-ano" type="number" placeholder="2022">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cor</label>
+            <input class="form-control" id="v-cor" type="text" placeholder="Prata">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Placa</label>
+            <input class="form-control" id="v-placa" type="text" placeholder="ABC-1234">
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label" data-i18n="label-password">Senha</label>
         <input class="form-control" id="senha" type="password" placeholder="Mínimo 8 caracteres" data-i18n="label-password">
@@ -227,7 +255,15 @@
     function selectProfile(el) {
       document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
-      el.querySelector('input').checked = true;
+      const radio = el.querySelector('input');
+      radio.checked = true;
+      
+      const veiculoSec = document.getElementById('veiculo-section');
+      if (radio.value === 'motorista' || radio.value === 'misto') {
+        veiculoSec.style.display = 'block';
+      } else {
+        veiculoSec.style.display = 'none';
+      }
     }
 
     async function cadastrar() {
@@ -244,6 +280,20 @@
         perfil_tipo: perfilTipo,
         senha:       document.getElementById('senha').value,
       };
+
+      if (perfilTipo === 'motorista' || perfilTipo === 'misto') {
+        dados.veiculo = {
+          marca:  document.getElementById('v-marca').value.trim(),
+          modelo: document.getElementById('v-modelo').value.trim(),
+          ano:    document.getElementById('v-ano').value,
+          cor:    document.getElementById('v-cor').value.trim(),
+          placa:  document.getElementById('v-placa').value.trim()
+        };
+        
+        if (!dados.veiculo.marca || !dados.veiculo.placa) {
+          return showAlert(currentLang === 'pt' ? 'Para motoristas, marca e placa do veículo são obrigatórios' : 'For drivers, vehicle brand and plate are required', 'error');
+        }
+      }
 
       if (!dados.nome || !dados.email || !dados.matricula || !dados.senha) {
         return showAlert(currentLang === 'pt' ? 'Preencha nome, e-mail, matrícula e senha' : 'Fill in name, email, student ID and password', 'error');
