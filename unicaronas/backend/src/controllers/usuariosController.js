@@ -10,7 +10,7 @@ const BCRYPT_ROUNDS = 12;
  */
 const cadastrar = async (req, res, next) => {
   try {
-    const { nome, email, matricula, senha, telefone, curso } = req.body;
+    const { nome, email, matricula, senha, telefone, curso, dia_ead, perfil_tipo } = req.body;
 
     // Valida domínio de e-mail institucional
     const dominiosPermitidos = (process.env.EMAIL_DOMINIOS || '@uni.edu.br')
@@ -34,13 +34,22 @@ const cadastrar = async (req, res, next) => {
       return res.status(409).json({ success: false, error: 'E-mail ou matrícula já cadastrados' });
     }
 
+    // Validação do dia_ead se fornecido
+    let diaEadVal = null;
+    if (dia_ead !== undefined && dia_ead !== null && dia_ead !== '') {
+      diaEadVal = parseInt(dia_ead, 10);
+      if (isNaN(diaEadVal) || diaEadVal < 0 || diaEadVal > 6) {
+        return res.status(400).json({ success: false, error: 'dia_ead deve ser entre 0 e 6' });
+      }
+    }
+
     const senhaHash = await bcrypt.hash(senha, BCRYPT_ROUNDS);
 
     const { rows } = await db.query(
-      `INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, nome, email, matricula, curso, criado_em`,
-      [nome.trim(), emailNorm, matricula.trim(), senhaHash, telefone || null, curso || null]
+      `INSERT INTO usuarios (nome, email, matricula, senha_hash, telefone, curso, dia_ead, perfil_tipo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, nome, email, matricula, curso, dia_ead, perfil_tipo, criado_em`,
+      [nome.trim(), emailNorm, matricula.trim(), senhaHash, telefone || null, curso || null, diaEadVal, perfil_tipo || 'misto']
     );
 
     res.status(201).json({
@@ -76,7 +85,7 @@ const login = async (req, res, next) => {
     if (!senhaOk) return credenciaisInvalidas();
 
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, nome: usuario.nome },
+      { id: usuario.id, email: usuario.email, nome: usuario.nome, perfil_tipo: usuario.perfil_tipo },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -93,6 +102,7 @@ const login = async (req, res, next) => {
           avaliacao_media:  usuario.avaliacao_media,
           foto_url:         usuario.foto_url,
           dia_ead:          usuario.dia_ead,
+          perfil_tipo:      usuario.perfil_tipo,
         },
       },
     });
@@ -161,7 +171,7 @@ const buscarPorId = async (req, res, next) => {
 const atualizarPerfil = async (req, res, next) => {
   try {
     const id = req.usuario.id;
-    const { nome, telefone, curso, dia_ead } = req.body;
+    const { nome, telefone, curso, dia_ead, perfil_tipo } = req.body;
     let { foto_url } = req.body;
 
     // Se houver arquivo enviado, gera a URL local
@@ -187,10 +197,11 @@ const atualizarPerfil = async (req, res, next) => {
          curso         = COALESCE($3, curso),
          foto_url      = COALESCE($4, foto_url),
          dia_ead       = COALESCE($5, dia_ead),
+         perfil_tipo   = COALESCE($6, perfil_tipo),
          atualizado_em = NOW()
-       WHERE id = $6
-       RETURNING id, nome, email, curso, telefone, foto_url, dia_ead`,
-      [nome?.trim() || null, telefone?.trim() || null, curso?.trim() || null, foto_url || null, diaEadVal, id]
+       WHERE id = $7
+       RETURNING id, nome, email, curso, telefone, foto_url, dia_ead, perfil_tipo`,
+      [nome?.trim() || null, telefone?.trim() || null, curso?.trim() || null, foto_url || null, diaEadVal, perfil_tipo || null, id]
     );
 
     if (rows.length === 0) {

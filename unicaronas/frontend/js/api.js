@@ -79,12 +79,16 @@ const api = {
     return request(`/caronas${qs ? '?' + qs : ''}`);
   },
   solicitacoesPendentes: () => request('/caronas/solicitacoes/pendentes'),
-  historicoCaronas: (uid) => request(`/caronas/historico/${uid}`),
+  getHistorico: (uid) => request(`/caronas/historico/${uid}`),
   solicitacoesCarona: (caronaId) => request(`/caronas/${caronaId}/solicitacoes`),
   criarCarona:          (body)       => request('/caronas', { method: 'POST', body: JSON.stringify(body) }),
   buscarCarona:         (id)         => request(`/caronas/${id}`),
   solicitarVaga:        (id)         => request(`/caronas/${id}/solicitar`, { method: 'POST' }),
   concluirCarona:       (id)         => request(`/caronas/${id}/concluir`, { method: 'PATCH' }),
+  cancelarCarona:       (id, justificativa) => request(`/caronas/${id}/cancelar`, { 
+    method: 'PATCH', 
+    body: JSON.stringify({ justificativa }) 
+  }),
   minhaSolicitacao:     (id)         => request(`/caronas/${id}/minha-solicitacao`),
   responderSolicitacao: (id, status) => request(`/caronas/solicitacoes/${id}`, {
     method: 'PATCH', body: JSON.stringify({ status }),

@@ -17,16 +17,90 @@
     .cadastro-brand span { color: var(--accent-2); }
     .cadastro-title { font-size: 1.55rem; font-weight: 700; letter-spacing: -.4px; }
     .cadastro-subtitle { color: var(--text-3); font-size: .88rem; margin-top: .3rem; }
-    .step-indicator {
-      display: flex; gap: .4rem; margin-bottom: 2rem;
+
+    /* Estilo aprimorado para Seleção de Perfil */
+    .profile-selection {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 0.5rem;
     }
-    .step-dot { height: 3px; border-radius: 99px; background: var(--border); flex: 1; transition: background .3s; }
-    .step-dot.active { background: var(--accent); }
+    .profile-card {
+      position: relative;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .profile-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .profile-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .profile-card.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .profile-card.active .profile-icon-circle {
+      background: var(--accent);
+      color: white;
+    }
+    .profile-card.active strong {
+      color: var(--accent);
+    }
+    .profile-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+      transition: all 0.2s;
+    }
+    .profile-card strong {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text);
+      transition: color 0.2s;
+    }
+    .profile-card span {
+      font-size: 0.72rem;
+      color: var(--text-3);
+      line-height: 1.3;
+    }
+    .check-mark {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .profile-card.active .check-mark {
+      opacity: 1;
+    }
 
     @media (max-width: 600px) {
       body { padding: 1rem; }
       .cadastro-wrap { padding: 1rem 0; }
-      .grid-2 { grid-template-columns: 1fr; }
+      .grid-2, .profile-selection { grid-template-columns: 1fr; }
+      .profile-card { flex-direction: row; text-align: left; padding: 1rem; gap: 1rem; }
+      .profile-icon-circle { width: 40px; height: 40px; flex-shrink: 0; }
     }
   </style>
 </head>
@@ -70,6 +144,61 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">Como você usará o UniCaronas?</label>
+        <div class="profile-selection">
+          <label class="profile-card active" onclick="selectProfile(this)">
+            <input type="radio" name="perfil_tipo" value="estudante" checked>
+            <div class="check-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="profile-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div>
+              <strong>Passageiro</strong>
+              <span>Vou apenas buscar caronas</span>
+            </div>
+          </label>
+
+          <label class="profile-card" onclick="selectProfile(this)">
+            <input type="radio" name="perfil_tipo" value="motorista">
+            <div class="check-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="profile-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            </div>
+            <div>
+              <strong>Motorista</strong>
+              <span>Vou apenas oferecer caronas</span>
+            </div>
+          </label>
+
+          <label class="profile-card" onclick="selectProfile(this)">
+            <input type="radio" name="perfil_tipo" value="misto">
+            <div class="check-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="profile-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <div>
+              <strong>Misto</strong>
+              <span>Quero ambas as opções</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="dia_ead">Meu dia EAD (Opcional)</label>
+        <select id="dia_ead" class="form-control">
+          <option value="">Não possuo dia EAD fixo</option>
+          <option value="1">Segunda-feira</option>
+          <option value="2">Terça-feira</option>
+          <option value="3">Quarta-feira</option>
+          <option value="4">Quinta-feira</option>
+          <option value="5">Sexta-feira</option>
+          <option value="6">Sábado</option>
+          <option value="0">Domingo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label" data-i18n="label-password">Senha</label>
         <input class="form-control" id="senha" type="password" placeholder="Mínimo 8 caracteres" data-i18n="label-password">
       </div>
@@ -95,15 +224,49 @@
   <script src="../js/api.js"></script>
   <script src="../js/i18n.js"></script>
   <script>
+    function selectProfile(el) {
+      document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      el.querySelector('input').checked = true;
+    }
+
     async function cadastrar() {
+      const diaEadVal = document.getElementById('dia_ead').value;
+      const perfilTipo = document.querySelector('input[name="perfil_tipo"]:checked').value;
+      
       const dados = {
-        nome:      document.getElementById('nome').value.trim(),
-        email:     document.getElementById('email').value.trim(),
-        matricula: document.getElementById('matricula').value.trim(),
-        curso:     document.getElementById('curso').value.trim(),
-        telefone:  document.getElementById('telefone').value.trim(),
-        senha:     document.getElementById('senha').value,
+        nome:        document.getElementById('nome').value.trim(),
+        email:       document.getElementById('email').value.trim(),
+        matricula:   document.getElementById('matricula').value.trim(),
+        curso:       document.getElementById('curso').value.trim(),
+        telefone:    document.getElementById('telefone').value.trim(),
+        dia_ead:     diaEadVal !== '' ? parseInt(diaEadVal, 10) : null,
+        perfil_tipo: perfilTipo,
+        senha:       document.getElementById('senha').value,
       };
+
+      if (!dados.nome || !dados.email || !dados.matricula || !dados.senha) {
+        return showAlert(currentLang === 'pt' ? 'Preencha nome, e-mail, matrícula e senha' : 'Fill in name, email, student ID and password', 'error');
+      }
+      if (dados.senha.length < 8) {
+        return showAlert(currentLang === 'pt' ? 'A senha deve ter ao menos 8 caracteres' : 'The password must have at least 8 characters', 'error');
+      }
+
+      const btn = document.getElementById('btn-cadastrar');
+      btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Criando conta...' : 'Creating account...';
+
+      try {
+        await api.cadastrar(dados);
+        showAlert(currentLang === 'pt' ? 'Conta criada com sucesso! Redirecionando...' : 'Account created successfully! Redirecting...', 'success');
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      } catch (err) {
+        showAlert(err.message, 'error');
+        btn.disabled = false; btn.textContent = currentLang === 'pt' ? 'Criar conta' : 'Create account';
+      }
+    }
+  </script>
+</body>
+</html>
 
       if (!dados.nome || !dados.email || !dados.matricula || !dados.senha) {
         return showAlert(currentLang === 'pt' ? 'Preencha nome, e-mail, matrícula e senha' : 'Fill in name, email, student ID and password', 'error');

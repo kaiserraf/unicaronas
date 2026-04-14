@@ -195,6 +195,7 @@
           <div id="perfil-avatar" class="perfil-avatar"></div>
           <div class="perfil-info">
             <h1 id="perfil-nome" class="perfil-nome"></h1>
+            <p  id="perfil-tipo-badge" style="margin-bottom: 0.5rem;"></p>
             <p  id="perfil-curso" class="perfil-curso"></p>
             <p  id="perfil-email" class="perfil-email"></p>
             <p  id="perfil-membro" class="perfil-membro"></p>
@@ -268,6 +269,31 @@
           <label class="form-label" for="edit-nome" data-i18n="label-full-name">Nome completo</label>
           <input id="edit-nome" class="form-control" type="text" maxlength="100" autocomplete="name">
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de perfil</label>
+          <div class="grid-3" style="gap: 0.5rem;">
+            <label class="card-radio" style="padding: 0.5rem;">
+              <input type="radio" name="edit-perfil-tipo" value="estudante">
+              <div class="radio-content" style="font-size: 0.75rem;">
+                <strong>Passageiro</strong>
+              </div>
+            </label>
+            <label class="card-radio" style="padding: 0.5rem;">
+              <input type="radio" name="edit-perfil-tipo" value="motorista">
+              <div class="radio-content" style="font-size: 0.75rem;">
+                <strong>Motorista</strong>
+              </div>
+            </label>
+            <label class="card-radio" style="padding: 0.5rem;">
+              <input type="radio" name="edit-perfil-tipo" value="misto">
+              <div class="radio-content" style="font-size: 0.75rem;">
+                <strong>Misto</strong>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="edit-telefone" data-i18n="label-phone">Telefone</label>
           <input id="edit-telefone" class="form-control" type="tel" maxlength="20" placeholder="(00) 00000-0000">

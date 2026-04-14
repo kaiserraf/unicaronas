@@ -15,6 +15,10 @@ const schemaResponder = {
   status: { required: true, type: 'string' },
 };
 
+const schemaCancelar = {
+  justificativa: { required: true, type: 'string', minLength: 5, maxLength: 500 },
+};
+
 router.get('/',                       ctrl.listar);
 router.get('/solicitacoes/pendentes', auth, ctrl.solicitacoesPendentes);
 router.get('/historico/:usuario_id', auth, ctrl.historico);
@@ -24,6 +28,7 @@ router.get('/:id/solicitacoes', auth,  ctrl.listarSolicitacoes);
 router.get('/:id/minha-solicitacao', auth, ctrl.minhaSolicitacao);
 router.post('/:id/solicitar', auth,   ctrl.solicitar);
 router.patch('/:id/concluir', auth, ctrl.concluir);
+router.patch('/:id/cancelar', auth, validar(schemaCancelar), ctrl.cancelar);
 router.patch('/solicitacoes/:id', auth, validar(schemaResponder), ctrl.responderSolicitacao);
 
 module.exports = router;

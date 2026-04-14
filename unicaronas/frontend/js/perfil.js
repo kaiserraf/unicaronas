@@ -48,6 +48,18 @@ function renderPerfil(u, ehProprio) {
   setText('perfil-curso',  u.curso  || (currentLang === 'pt' ? 'Curso não informado' : 'Course not informed'));
   setText('perfil-email',  u.email);
   setText('perfil-membro', t('profile-member-since') + ' ' + formatarDataCurta(u.criado_em));
+  
+  const badge = document.getElementById('perfil-tipo-badge');
+  if (badge) {
+    const tipos = {
+      'estudante': { label: 'Passageiro', color: 'badge-blue' },
+      'motorista': { label: 'Motorista', color: 'badge-green' },
+      'misto':     { label: 'Misto', color: 'badge-accent' }
+    };
+    const tInfo = tipos[u.perfil_tipo] || tipos['misto'];
+    badge.innerHTML = `<span class="badge ${tInfo.color}">${tInfo.label}</span>`;
+  }
+
   document.title = u.nome + ' — UniCaronas';
 
   const btn = document.getElementById('btn-editar-perfil');
@@ -156,6 +168,9 @@ function initEdicao(u) {
   document.getElementById('edit-telefone').value = u.telefone || '';
   document.getElementById('edit-curso').value    = u.curso    || '';
   document.getElementById('edit-dia-ead').value  = (u.dia_ead !== null && u.dia_ead !== undefined) ? u.dia_ead : '';
+  
+  const radio = document.querySelector(`input[name="edit-perfil-tipo"][value="${u.perfil_tipo}"]`);
+  if (radio) radio.checked = true;
 
   atualizarPreviewFoto(u.foto_url, u.nome);
 
@@ -188,6 +203,7 @@ function fecharModal() {
 async function salvarPerfil() {
   const btn  = document.querySelector('#form-editar-perfil [type="submit"]');
   const nome = document.getElementById('edit-nome').value.trim();
+  const perfilTipo = document.querySelector('input[name="edit-perfil-tipo"]:checked')?.value;
 
   if (!nome || nome.length < 2) {
     showAlert('O nome deve ter pelo menos 2 caracteres', 'error', 'alert-modal');
@@ -203,6 +219,7 @@ async function salvarPerfil() {
     formData.append('telefone', document.getElementById('edit-telefone').value.trim());
     formData.append('curso', document.getElementById('edit-curso').value.trim());
     formData.append('dia_ead', document.getElementById('edit-dia-ead').value);
+    formData.append('perfil_tipo', perfilTipo);
     
     const inputFoto = document.getElementById('edit-foto');
     if (inputFoto.files && inputFoto.files[0]) {
@@ -211,15 +228,12 @@ async function salvarPerfil() {
 
     const res = await api.atualizarPerfil(formData);
 
-    // Sincroniza localStorage com os novos dados (incluindo dia_ead)
+    // Sincroniza localStorage com os novos dados
     const updatedUser = { ...getUser(), ...res.data };
     setUser(updatedUser);
     
     // Atualiza interface
-    setText('perfil-nome',  res.data.nome);
-    setText('perfil-curso', res.data.curso || 'Curso não informado');
-    atualizarAvatar('perfil-avatar', res.data.foto_url, res.data.nome);
-
+    renderPerfil(res.data, true);
     fecharModal();
     showAlert('Perfil atualizado com sucesso', 'success');
   } catch (err) {

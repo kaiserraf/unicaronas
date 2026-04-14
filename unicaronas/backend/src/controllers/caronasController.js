@@ -18,12 +18,33 @@ const criar = async (req, res, next) => {
     const { rows: userRows } = await db.query('SELECT dia_ead FROM usuarios WHERE id = $1', [motorista_id]);
     const dia_ead = userRows[0]?.dia_ead;
 
+    const agora = new Date();
     const horario = new Date(horario_partida);
     if (isNaN(horario.getTime())) {
       return res.status(400).json({ success: false, error: 'horario_partida inválido' });
     }
-    if (horario <= new Date()) {
+    
+    // 1. Não pode ser no passado
+    if (horario <= agora) {
       return res.status(400).json({ success: false, error: 'O horário de partida deve ser no futuro' });
+    }
+
+    // 2. Limitar ao semestre atual
+    const mesAtual = agora.getMonth(); // 0-11
+    const anoAtual = agora.getFullYear();
+    let limiteSemestre;
+
+    if (mesAtual <= 5) { // Janeiro a Junho
+      limiteSemestre = new Date(anoAtual, 5, 30, 23, 59, 59); // 30 de Junho
+    } else { // Julho a Dezembro
+      limiteSemestre = new Date(anoAtual, 11, 31, 23, 59, 59); // 31 de Dezembro
+    }
+
+    if (horario > limiteSemestre) {
+      const msg = mesAtual <= 5 
+        ? 'Só é permitido criar caronas para o semestre atual (até 30/06).'
+        : 'Só é permitido criar caronas para o semestre atual (até 31/12).';
+      return res.status(400).json({ success: false, error: msg });
     }
 
     // Validação de dia EAD para a carona principal
@@ -408,4 +429,46 @@ const historico = async (req, res, next) => {
   }
 };
 
-module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes, concluir, minhaSolicitacao, solicitacoesPendentes, historico };
+/**
+ * PATCH /api/caronas/:id/cancelar
+ * Cancela uma carona ativa. Apenas o motorista pode cancelar.
+ */
+const cancelar = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const motorista_id = req.usuario.id;
+    const { justificativa } = req.body;
+
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ success: false, error: 'ID inválido' });
+    }
+
+    // Só pode cancelar caronas 'ativa'
+    const { rows: caronas } = await db.query(
+      'SELECT status FROM caronas WHERE id = $1 AND motorista_id = $2',
+      [id, motorista_id]
+    );
+
+    if (caronas.length === 0) {
+      return res.status(404).json({ success: false, error: 'Carona não encontrada ou não autorizada' });
+    }
+
+    if (caronas[0].status !== 'ativa') {
+      return res.status(400).json({ success: false, error: `Não é possível cancelar uma carona com status "${caronas[0].status}"` });
+    }
+
+    const { rows } = await db.query(
+      `UPDATE caronas
+       SET status = 'cancelada', justificativa_cancelamento = $1, atualizado_em = NOW()
+       WHERE id = $2 AND motorista_id = $3
+       RETURNING *`,
+      [justificativa?.trim() || null, id, motorista_id]
+    );
+
+    res.json({ success: true, data: rows[0], message: 'Carona cancelada com sucesso' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { criar, listar, buscarPorId, solicitar, responderSolicitacao, listarSolicitacoes, concluir, minhaSolicitacao, solicitacoesPendentes, historico, cancelar };

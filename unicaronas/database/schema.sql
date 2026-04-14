@@ -24,6 +24,8 @@ CREATE TABLE usuarios (
   foto_url         VARCHAR(255),
   curso            VARCHAR(100),
   dia_ead          INT,
+  perfil_tipo      VARCHAR(20)   NOT NULL DEFAULT 'misto'
+                   CHECK (perfil_tipo IN ('estudante','motorista','misto')),
   avaliacao_media  DECIMAL(2,1)  NOT NULL DEFAULT 0.0,
   total_avaliacoes INT           NOT NULL DEFAULT 0,
   ativo            BOOLEAN       NOT NULL DEFAULT true,
@@ -38,22 +40,23 @@ CREATE INDEX idx_usuarios_matricula ON usuarios (matricula);
 -- TABELA: caronas
 -- =============================================================
 CREATE TABLE caronas (
-  id                 SERIAL PRIMARY KEY,
-  motorista_id       INT           NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  origem             VARCHAR(200)  NOT NULL,
-  destino            VARCHAR(200)  NOT NULL,
-  horario_partida    TIMESTAMP     NOT NULL,
-  vagas_totais       INT           NOT NULL CHECK (vagas_totais > 0),
-  vagas_disponiveis  INT           NOT NULL CHECK (vagas_disponiveis >= 0),
-  valor_sugerido     DECIMAL(10,2),
-  valor_cobrado      DECIMAL(10,2) NOT NULL CHECK (valor_cobrado >= 0),
-  distancia_km       DECIMAL(10,2),
-  observacoes        TEXT,
-  recorrente         BOOLEAN       NOT NULL DEFAULT false,
-  status             VARCHAR(20)   NOT NULL DEFAULT 'ativa'
-                     CHECK (status IN ('ativa','em_andamento','concluida','cancelada')),
-  criado_em          TIMESTAMP     NOT NULL DEFAULT NOW(),
-  atualizado_em      TIMESTAMP     NOT NULL DEFAULT NOW()
+  id                        SERIAL PRIMARY KEY,
+  motorista_id              INT           NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  origem                    VARCHAR(200)  NOT NULL,
+  destino                   VARCHAR(200)  NOT NULL,
+  horario_partida           TIMESTAMP     NOT NULL,
+  vagas_totais              INT           NOT NULL CHECK (vagas_totais > 0),
+  vagas_disponiveis         INT           NOT NULL CHECK (vagas_disponiveis >= 0),
+  valor_sugerido            DECIMAL(10,2),
+  valor_cobrado             DECIMAL(10,2) NOT NULL CHECK (valor_cobrado >= 0),
+  distancia_km              DECIMAL(10,2),
+  observacoes               TEXT,
+  recorrente                BOOLEAN       NOT NULL DEFAULT false,
+  status                    VARCHAR(20)   NOT NULL DEFAULT 'ativa'
+                            CHECK (status IN ('ativa','em_andamento','concluida','cancelada')),
+  justificativa_cancelamento TEXT,
+  criado_em                 TIMESTAMP     NOT NULL DEFAULT NOW(),
+  atualizado_em             TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_caronas_motorista ON caronas (motorista_id);
