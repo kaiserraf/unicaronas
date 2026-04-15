@@ -11,6 +11,22 @@
       font-family: var(--font-mono);
       margin-top: .3rem;
     }
+    /* Estilos para Autocomplete */
+    .autocomplete-wrapper { position: relative; }
+    .autocomplete-results {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      z-index: 1000; max-height: 200px; overflow-y: auto;
+      display: none; box-shadow: var(--shadow-md);
+    }
+    .autocomplete-item {
+      padding: .6rem 1rem; cursor: pointer; font-size: .85rem;
+      border-bottom: 1px solid var(--border); transition: background .2s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .autocomplete-item:hover { background: var(--bg-3); color: var(--accent-2); }
+    .autocomplete-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -42,13 +58,15 @@
       <div id="alert-container"></div>
 
       <div class="grid-2">
-        <div class="form-group">
+        <div class="form-group autocomplete-wrapper">
           <label class="form-label" data-i18n="label-origin">Origem</label>
-          <input class="form-control" id="origem" type="text" placeholder="Seu local de partida">
+          <input class="form-control" id="origem" type="text" placeholder="Seu local de partida" autocomplete="off">
+          <div id="results-origem" class="autocomplete-results"></div>
         </div>
-        <div class="form-group">
+        <div class="form-group autocomplete-wrapper">
           <label class="form-label" data-i18n="label-destination">Destino</label>
-          <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada">
+          <input class="form-control" id="destino" type="text" placeholder="Campus ou endereço de chegada" autocomplete="off">
+          <div id="results-destino" class="autocomplete-results"></div>
         </div>
       </div>
 
@@ -200,6 +218,63 @@
     }
     carregarVeiculos();
 
+    // --- Autocomplete ---
+    function setupAutocomplete(inputId, resultsId) {
+      const input = document.getElementById(inputId);
+      const results = document.getElementById(resultsId);
+      let timeout = null;
+
+      input.addEventListener('input', () => {
+        clearTimeout(timeout);
+        const query = input.value.trim();
+        if (query.length < 3) {
+          results.style.display = 'none';
+          return;
+        }
+
+        timeout = setTimeout(async () => {
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=5`);
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+              results.innerHTML = data.map(item => `
+                <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${resultsId}', '${item.display_name.replace(/'/g, "\\'")}')">
+                  ${item.display_name}
+                </div>
+              `).join('');
+              results.style.display = 'block';
+            } else {
+              results.style.display = 'none';
+            }
+          } catch (e) { console.error('Erro no autocomplete:', e); }
+        }, 500);
+      });
+
+      // Fechar ao clicar fora
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !results.contains(e.target)) {
+          results.style.display = 'none';
+        }
+      });
+    }
+
+    window.selectAddress = (inputId, resultsId, value) => {
+      document.getElementById(inputId).value = value;
+      document.getElementById(resultsId).style.display = 'none';
+    };
+
+    setupAutocomplete('origem', 'results-origem');
+    setupAutocomplete('destino', 'results-destino');
+
+    async function validarGeocodificacao(endereco) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`);
+        const data = await response.json();
+        return data && data.length > 0;
+      } catch (e) { return false; }
+    }
+
     async function publicarCarona() {
       const dados = {
         origem:          document.getElementById('origem').value.trim(),
@@ -220,7 +295,22 @@
       }
 
       const btn = document.getElementById('btn-pub');
-      btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Publicando...' : 'Publishing...';
+      btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Validando endereços...' : 'Validating addresses...';
+
+      // Validação de Geocodificação antes de enviar
+      const origemOk = await validarGeocodificacao(dados.origem);
+      if (!origemOk) {
+        btn.disabled = false; btn.textContent = t('btn-publish');
+        return showAlert(currentLang === 'pt' ? 'Não conseguimos localizar a Origem. Por favor, use uma sugestão da lista ou um endereço mais completo.' : 'Could not locate Origin. Please use a suggestion or a more complete address.', 'error');
+      }
+
+      const destinoOk = await validarGeocodificacao(dados.destino);
+      if (!destinoOk) {
+        btn.disabled = false; btn.textContent = t('btn-publish');
+        return showAlert(currentLang === 'pt' ? 'Não conseguimos localizar o Destino. Por favor, use uma sugestão da lista ou um endereço mais completo.' : 'Could not locate Destination. Please use a suggestion or a more complete address.', 'error');
+      }
+
+      btn.textContent = currentLang === 'pt' ? 'Publicando...' : 'Publishing...';
 
       try {
         const res = await api.criarCarona(dados);
