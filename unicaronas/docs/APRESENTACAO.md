@@ -1,71 +1,54 @@
-# 🎓 Apresentação do Projeto: UniCaronas
-**Sistema de Carona Solidária Universitária**
+# 🎓 Apresentação do Projeto: UniCaronas — 1º Bimestre 2026
+
+O **UniCaronas** é a solução definitiva para o transporte universitário, transformando a rotina de quem estuda e trabalha na universidade em algo mais econômico, seguro e sustentável.
 
 ---
 
-## 📝 1. O Problema
-O transporte universitário enfrenta desafios como:
-- **Custo elevado:** Combustível e manutenção para quem vai sozinho.
-- **Insegurança:** Falta de confiança em caronas informais.
-- **Impacto Ambiental:** Excesso de veículos com apenas uma pessoa.
-- **Dificuldade de Comunicação:** Grupos de WhatsApp que se perdem no volume de mensagens.
+## 🌟 O que realizamos neste período?
 
-## 🚀 2. A Solução: UniCaronas
-Uma plataforma centralizada que conecta motoristas e passageiros da mesma instituição, garantindo:
-- **Economia:** Divisão justa de custos baseada na distância.
-- **Segurança:** Acesso restrito a e-mails institucionais e perfis avaliados.
-- **Agilidade:** Chat integrado e mapas em tempo real.
-- **Acessibilidade:** Interface multilíngue (Português, Inglês e Espanhol).
+Neste bimestre, focamos em construir uma **experiência completa**, saindo de um protótipo e entregando um sistema que realmente resolve o problema da carona solidária.
 
----
+### 🚗 1. O Sistema de Carona na Prática
+Não apenas criamos formulários; desenvolvemos um fluxo real:
+*   **Inteligência de Rotas:** Integramos mapas reais para que motoristas e passageiros saibam exatamente onde se encontrar.
+*   **Gestão de Vagas:** O sistema controla automaticamente quantas pessoas podem ir na carona, evitando sobrecarga.
+*   **Precificação Justa:** Criamos um algoritmo que sugere o valor da carona baseado na distância e no custo do combustível.
 
-## 🛠️ 3. Arquitetura Técnica (Stack)
-O projeto foi desenvolvido focando em performance e simplicidade de manutenção:
+### 💬 2. Comunicação Integrada
+Eliminamos a necessidade de grupos de WhatsApp bagunçados:
+*   **Chat Interno:** Motoristas e passageiros conversam diretamente dentro da plataforma para combinar detalhes da viagem.
+*   **Histórico e Notificações:** Sistema de mensagens com marcação de leitura e organização por conversa.
 
-- **Frontend:** HTML5, CSS3 (Vanilla) e JavaScript Puro. 
-  - *Destaque:* Uso de **Web Components** e estados locais para uma experiência de SPA (Single Page Application) sem frameworks pesados.
-- **Backend:** Node.js com Express.
-  - *Destaque:* Arquitetura RESTful com autenticação via **JWT (JSON Web Token)**.
-- **Banco de Dados:** PostgreSQL.
-  - *Destaque:* Sistema de triggers para atualização automática de médias de avaliação e contagem de vagas.
+### 🎨 3. Design e Acessibilidade (UX/UI)
+Levamos o visual a um nível profissional:
+*   **Modo Escuro & Claro:** Interface adaptável que respeita a preferência do usuário.
+*   **Navegação Dinâmica:** Criamos uma Navbar inteligente com **Avatar Dropdown** que centraliza perfil, configurações e trocas de idioma em um só lugar.
+*   **Internacionalização:** O sistema fala **Português, Inglês e Espanhol**, atendendo também alunos de intercâmbio.
 
----
-
-## ✨ 4. Funcionalidades de Destaque (Diferenciais)
-
-### 🗺️ Inteligência Geoespacial
-- **Autocomplete de Endereços:** Integração com a API do Nominatim para garantir que apenas endereços reais sejam cadastrados.
-- **Mapas Interativos:** Visualização de rotas com Leaflet.js, facilitando o encontro entre motorista e passageiro.
-
-### 📊 Dashboard Dinâmico
-- A interface se adapta ao papel do usuário. Motoristas veem ferramentas de gestão; passageiros veem ferramentas de busca.
-
-### 💬 Comunicação em Tempo Real
-- Chat global integrado que permite combinar detalhes sem sair da plataforma, com sistema de notificações e leitura.
-
-### ⚙️ Engenharia de Software (Qualidade)
-- **Automação de Migrations:** Scripts que atualizam o banco de dados dos colaboradores automaticamente ao iniciar o projeto (`npm run migrate`).
-- **Precificação Justa:** Algoritmo que sugere valores baseados na distância e preço do combustível.
+### 💳 4. Confiança e Pagamento
+Segurança é nossa prioridade:
+*   **Acesso Restrito:** Apenas e-mails institucionais da universidade podem se cadastrar.
+*   **Checkout Simulado:** Fluxo completo de reserva com escolha de pagamento via **Pix, Cartão ou Dinheiro**.
+*   **Reputação:** Sistema de avaliação mútua (estrelas) para que todos saibam com quem estão pegando carona.
 
 ---
 
-## 📈 5. Status do Projeto (MVP)
-Atualmente, o sistema cobre todo o "Caminho Feliz":
-1. **Cadastro/Login** (com validação de e-mail institucional).
-2. **Criação de Carona** (com suporte a caronas recorrentes/semanais).
-3. **Busca Avançada** (por filtros de data, preço e local).
-4. **Solicitação e Aprovação** (fluxo completo de notificações).
-5. **Chat e Ajustes** (comunicação direta).
-6. **Pagamento e Conclusão** (simulação de checkout e taxa da plataforma).
-7. **Avaliação Mutua** (sistema de estrelas que gera a reputação do usuário).
+## 🛠️ Por trás das cortinas (Tecnologia)
+
+Para quem gosta de saber como as engrenagens giram, utilizamos:
+*   **Backend (Cérebro):** Node.js com uma API rápida e segura.
+*   **Frontend (Cara):** JavaScript Puro, HTML e CSS moderno (sem frameworks pesados, foco em performance).
+*   **Banco de Dados:** PostgreSQL para gerenciar milhares de dados de usuários e viagens.
+*   **Automação:** Criamos scripts que configuram o projeto automaticamente para qualquer novo desenvolvedor da equipe.
 
 ---
 
-## 👥 6. Equipe
-- **Ariane Archanjo** — Scrum Master
-- **Matheus Sizanoski** — Fullstack Developer
-- **Pedro Kafka** — Fullstack Developer
-- **Rafael Machado** — Product Owner
+## 👥 Nossa Equipe
+Trabalhamos de forma integrada para entregar excelência:
+*   **Ariane Archanjo** — Scrum Master
+*   **Matheus Sizanoski** — Fullstack Developer
+*   **Pedro Kafka** — Fullstack Developer
+*   **Rafael Machado** — Product Owner
 
 ---
 *UniCaronas — A tecnologia aproximando quem estuda perto.*
