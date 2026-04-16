@@ -98,11 +98,13 @@ const request = async (path, options = {}) => {
 const api = {
   cadastrar:       (body) => request('/usuarios', { method: 'POST', body: JSON.stringify(body) }),
   login:           (body) => request('/usuarios/login', { method: 'POST', body: JSON.stringify(body) }),
+  recuperarSenha:  (body) => request('/usuarios/recuperar-senha', { method: 'POST', body: JSON.stringify(body) }),
   perfil:          (id)   => request(`/usuarios/${id}`),
   atualizarPerfil: (body) => request('/usuarios/perfil', { 
     method: 'PATCH', 
     body: body instanceof FormData ? body : JSON.stringify(body) 
   }),
+  deletarConta:    ()     => request('/usuarios/conta', { method: 'DELETE' }),
 
   listarCaronas: (params = {}) => {
     const qs = new URLSearchParams(

@@ -93,6 +93,12 @@
           <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-weight: 500;">
             <span style="color: var(--accent);">📍 Ponto de encontro:</span> ${c.ponto_encontro}
           </div>
+          ${c.itinerario ? `
+            <div style="margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-3); background: var(--surface-2); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border-left: 2px solid var(--accent);">
+              <span style="font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Itinerário</span>
+              ${c.itinerario}
+            </div>
+          ` : ''}
           <div class="carona-meta" style="margin-top: 0.75rem;">
             <div class="meta-item">
               <span class="meta-label">${t('card-time')}</span>

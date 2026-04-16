@@ -310,9 +310,17 @@
       btn.disabled = true; btn.textContent = currentLang === 'pt' ? 'Criando conta...' : 'Creating account...';
 
       try {
-        await api.cadastrar(dados);
-        showAlert(currentLang === 'pt' ? 'Conta criada com sucesso! Redirecionando...' : 'Account created successfully! Redirecting...', 'success');
-        setTimeout(() => window.location.href = 'login.html', 2000);
+        const res = await api.cadastrar(dados);
+        showAlert(currentLang === 'pt' ? 'Conta criada com sucesso! Entrando...' : 'Account created successfully! Logging in...', 'success');
+        
+        // Auto-login com os dados retornados
+        if (res.data && res.data.token) {
+          setToken(res.data.token);
+          setUser(res.data.usuario);
+          setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        } else {
+          setTimeout(() => window.location.href = 'login.html', 2000);
+        }
       } catch (err) {
         showAlert(err.message, 'error');
         btn.disabled = false; btn.textContent = currentLang === 'pt' ? 'Criar conta' : 'Create account';

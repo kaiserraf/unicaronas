@@ -11,7 +11,7 @@ const criar = async (req, res, next) => {
     const {
       origem, destino, horario_partida, vagas_totais,
       valor_cobrado, distancia_km, observacoes, recorrente,
-      veiculo_id, ponto_encontro, ponto_encontro_detalhes
+      veiculo_id, ponto_encontro, ponto_encontro_detalhes, itinerario
     } = req.body;
     const motorista_id = req.usuario.id;
 
@@ -76,8 +76,8 @@ const criar = async (req, res, next) => {
     const { rows } = await db.query(
       `INSERT INTO caronas
          (motorista_id, veiculo_id, origem, destino, ponto_encontro, ponto_encontro_detalhes, horario_partida, vagas_totais, vagas_disponiveis,
-          valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, $13)
+          valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente, itinerario)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         motorista_id,
@@ -92,7 +92,8 @@ const criar = async (req, res, next) => {
         valor,
         distancia,
         observacoes?.trim() || null,
-        !!recorrente
+        !!recorrente,
+        itinerario?.trim() || null
       ]
     );
 
@@ -129,9 +130,9 @@ const criar = async (req, res, next) => {
 
         await db.query(
           `INSERT INTO caronas (motorista_id, veiculo_id, origem, destino, ponto_encontro, ponto_encontro_detalhes, horario_partida, vagas_totais, 
-           vagas_disponiveis, valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, true)`,
-          [motorista_id, veiculo_id || null, origem.trim(), destino.trim(), ponto_encontro.trim(), ponto_encontro_detalhes?.trim() || null, novaDataStr, vagas, valor_sugerido, valor, distancia, observacoes?.trim() || null]
+           vagas_disponiveis, valor_sugerido, valor_cobrado, distancia_km, observacoes, recorrente, itinerario)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11, $12, true, $13)`,
+          [motorista_id, veiculo_id || null, origem.trim(), destino.trim(), ponto_encontro.trim(), ponto_encontro_detalhes?.trim() || null, novaDataStr, vagas, valor_sugerido, valor, distancia, observacoes?.trim() || null, itinerario?.trim() || null]
         );
         
         criadas++;
@@ -159,8 +160,8 @@ const listar = async (req, res, next) => {
     }
 
     let query = `
-      SELECT c.*, u.nome AS motorista_nome, u.foto_url AS motorista_foto,
-             u.avaliacao_media AS motorista_avaliacao
+      SELECT c.*, u.nome AS motorista_nome, u.foto_url AS motorista_foto, u.perfil_tipo AS motorista_tipo,
+             u.avaliacao_media AS motorista_avaliacao, u.total_avaliacoes AS motorista_total_avaliacoes
       FROM caronas c
       JOIN usuarios u ON u.id = c.motorista_id
       WHERE c.status = 'ativa'
@@ -171,11 +172,11 @@ const listar = async (req, res, next) => {
     let idx = 1;
 
     if (origem) {
-      query += ` AND LOWER(c.origem) LIKE LOWER($${idx++})`;
+      query += ` AND (LOWER(c.origem) LIKE LOWER($${idx}) OR LOWER(c.itinerario) LIKE LOWER($${idx++}))`;
       params.push(`%${origem}%`);
     }
     if (destino) {
-      query += ` AND LOWER(c.destino) LIKE LOWER($${idx++})`;
+      query += ` AND (LOWER(c.destino) LIKE LOWER($${idx}) OR LOWER(c.itinerario) LIKE LOWER($${idx++}))`;
       params.push(`%${destino}%`);
     }
     if (data) {
@@ -332,13 +333,14 @@ const listarSolicitacoes = async(req, res, next) => {
           u.nome AS passageiro_nome,
           u.curso AS passageiro_curso,
           u.avaliacao_media AS passageiro_avaliacao,
-          p.status AS pagamento_status
+          p.status AS pagamento_status,
+          EXISTS (SELECT 1 FROM avaliacoes WHERE solicitacao_id = s.id AND avaliador_id = $2) AS ja_avaliado
         FROM solicitacoes_carona s
         JOIN usuarios u ON u.id = s.passageiro_id
         LEFT JOIN pagamentos p ON p.solicitacao_id = s.id
         WHERE s.carona_id = $1
         ORDER BY s.criado_em ASC`,
-      [carona_id]
+      [carona_id, motorista_id]
     );
 
     res.json({ success: true, data: rows });
@@ -432,7 +434,8 @@ const minhaSolicitacao = async (req, res, next) => {
     const passageiro_id = req.usuario.id;
 
     const { rows } = await db.query(
-      `SELECT s.*, p.status AS pagamento_status
+      `SELECT s.*, p.status AS pagamento_status,
+          EXISTS (SELECT 1 FROM avaliacoes WHERE solicitacao_id = s.id AND avaliador_id = $2) AS ja_avaliado
        FROM solicitacoes_carona s
        LEFT JOIN pagamentos p ON p.solicitacao_id = s.id
        WHERE s.carona_id = $1 AND s.passageiro_id = $2`,

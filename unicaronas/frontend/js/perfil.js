@@ -75,7 +75,10 @@ function renderPerfil(u, ehProprio) {
   if (ehProprio) { 
     btn.removeAttribute('hidden'); 
     btn.onclick = abrirModal; 
-    if (btnDel) btnDel.removeAttribute('hidden');
+    if (btnDel) {
+      btnDel.removeAttribute('hidden');
+      btnDel.onclick = confirmarExclusao;
+    }
   } else {
     btn.setAttribute('hidden', '');
     if (btnDel) btnDel.setAttribute('hidden', '');
