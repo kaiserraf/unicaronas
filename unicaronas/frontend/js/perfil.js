@@ -80,7 +80,10 @@ function renderPerfil(u, ehProprio) {
         btn.removeAttribute('hidden'); 
         btn.onclick = abrirModal; 
     }
-    if (btnDel) btnDel.removeAttribute('hidden');
+    if (btnDel) {
+      btnDel.removeAttribute('hidden');
+      btnDel.onclick = confirmarExclusao;
+    }
   } else {
     if (btn) btn.setAttribute('hidden', '');
     if (btnDel) btnDel.setAttribute('hidden', '');

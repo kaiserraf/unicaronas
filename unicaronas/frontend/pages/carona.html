@@ -88,7 +88,7 @@
   <footer class="footer">
     <div class="container footer-content">
       <div class="navbar-brand-img" style="margin-bottom: 1rem;"></div>
-      <div class="footer-dev">Desenvolvido por <a href="#">Ariane Archanjo</a>, <a href="#">Matheus Sizanoski</a>, <a href="#">Pedro Kafka</a> e <a href="#">Rafael Machado</a></div>
+      <div class="footer-dev">Desenvolvido pelas divas: <a href="#">Ariane Archanjo</a>, <a href="#">Matheus Sizanoski</a>, <a href="#">Pedro Kafka</a> e <a href="#">Rafael Machado</a></div>
       <div class="footer-copyright">© 2026 UniCaronas — Todos os direitos reservados.</div>
     </div>
   </footer>
@@ -171,6 +171,14 @@
           solicitacaoId = minhaSol?.id;
         }
 
+        // Banner de conclusão para todos
+        const conclusaoHtml = c.status === 'concluida' ? `
+          <div class="card mb-2 fade-up" style="background: var(--surface-2); border: 1px solid var(--green); text-align:center; padding: 1.5rem">
+            <div style="font-size: 1.5rem; margin-bottom: 0.5rem">🏁</div>
+            <div style="font-weight:700; color:var(--green); font-size: 1.1rem">Esta viagem foi concluída com sucesso!</div>
+            <div style="font-size:0.85rem; color:var(--text-3); margin-top: 0.25rem">Obrigado por usar o UniCaronas.</div>
+          </div>` : '';
+
         // Pagamento só aparece se a carona estiver CONCLUÍDA e o passageiro aceito não tiver pago
         const precisaPagar = (!sou_motorista && minhaSol?.status === 'aceita' && c.status === 'concluida' && minhaSol?.pagamento_status !== 'pago');
         
@@ -178,7 +186,7 @@
           <div class="card mb-2 fade-up" style="background: var(--green-dim); border: 1px solid rgba(34,211,160,.3)">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem">
               <div>
-                <div style="font-weight:700; color:var(--green)">Viagem concluída!</div>
+                <div style="font-weight:700; color:var(--green)">Pagamento pendente</div>
                 <div style="font-size:0.85rem; color:var(--text-2)">Realize o pagamento para finalizar sua reserva.</div>
               </div>
               <a href="pagamento.html?solicitacao_id=${minhaSol.id}&carona_id=${id}&valor=${c.valor_cobrado}" class="btn btn-success btn-sm">Pagar ${formatarMoeda(c.valor_cobrado)}</a>
@@ -187,6 +195,7 @@
 
         // Injeção de conteúdo principal
         document.getElementById('conteudo').innerHTML = `
+          ${conclusaoHtml}
           <div class="page-header" style="padding-top:1.5rem">
             <div class="detalhe-rota fade-up">
               <span>${c.origem}</span>
@@ -202,7 +211,13 @@
             <div class="info-row"><span class="label">Status</span><span class="value"><span class="badge ${c.status === 'concluida' ? 'badge-green' : (c.status === 'cancelada' ? 'badge-red' : 'badge-accent')}">${c.status}</span></span></div>
             ${c.justificativa_cancelamento ? `<div class="info-row"><span class="label">Motivo cancelamento</span><span class="value" style="color:var(--red)">${c.justificativa_cancelamento}</span></div>` : ''}
             ${c.distancia_km ? `<div class="info-row"><span class="label">Distância estimada</span><span class="value">${c.distancia_km} km</span></div>` : ''}
-            ${c.observacoes ? `<div class="info-row"><span class="label">Observações</span><span class="value">${c.observacoes}</span></div>` : ''}
+            ${c.itinerario ? `
+              <div style="margin-top: 1.5rem; padding: 1rem; background: var(--surface-2); border: 1px dashed var(--accent); border-radius: var(--radius-sm);">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); margin-bottom: 0.5rem;">Itinerário / Pontos no Caminho</div>
+                <div style="font-size: 0.95rem; line-height: 1.5; color: var(--text-2);">${c.itinerario}</div>
+              </div>
+            ` : ''}
+            ${c.observacoes ? `<div class="info-row" style="margin-top:1.5rem"><span class="label">Observações</span><span class="value">${c.observacoes}</span></div>` : ''}
           </div>
           <div class="card fade-up fade-up-2">
             <div class="card-title">Motorista</div>
@@ -257,9 +272,11 @@
               <span class="badge ${minhaSol.pagamento_status === 'pago' ? 'badge-green' : 'badge-accent'}" style="display:block;margin-bottom:1rem">
                 ${minhaSol.pagamento_status === 'pago' ? 'Vaga confirmada e paga' : 'Vaga confirmada (aguardando conclusão)'}
               </span>
-              ${c.status === 'concluida' ? `
-                <button class="btn btn-primary btn-full mt-1" onclick="abrirModal('modal-avaliacao', ${c.motorista_id}, ${minhaSol.id})">Avaliar Motorista</button>
-              ` : ''}
+              ${c.status === 'concluida' ? (
+                minhaSol.ja_avaliado 
+                ? `<div class="alert alert-success" style="font-size:0.85rem; padding:0.75rem">Você já avaliou este motorista.</div>`
+                : `<button class="btn btn-primary btn-full mt-1" onclick="abrirModal('modal-avaliacao', ${c.motorista_id}, ${minhaSol.id})">Avaliar Motorista</button>`
+              ) : ''}
               <button class="btn-chat-iniciar btn-full mt-1" onclick="abrirChatRide(${minhaSol.id}, '${escJs(c.motorista_nome)}', '${escJs(c.origem)}', '${escJs(c.destino)}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 Chat com motorista
@@ -348,6 +365,7 @@
         await api.avaliar(dados);
         showAlert('Avaliação enviada!', 'success');
         fecharModal('modal-avaliacao');
+        carregarDados();
       } catch(err) {
         showAlert(err.message, 'error');
       }
@@ -387,7 +405,10 @@
                       <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
                       Chat
                     </button>
-                    <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-avaliacao', ${s.passageiro_id}, ${s.id})">Avaliar</button>
+                    ${s.ja_avaliado 
+                      ? `<span class="badge badge-green" style="font-size:0.7rem">Avaliado</span>`
+                      : `<button class="btn btn-primary btn-sm" onclick="abrirModal('modal-avaliacao', ${s.passageiro_id}, ${s.id})">Avaliar</button>`
+                    }
                   ` : ''}
                 `}
               </div>

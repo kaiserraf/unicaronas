@@ -96,6 +96,8 @@ const translations = {
     'label-origin': 'Ponto de partida',
     'label-destination': 'Destino final',
     'label-datetime': 'Data e Horário',
+    'label-itinerary': 'Itinerário (pontos no caminho)',
+    'placeholder-itinerary': 'Ex: Passando por Batel, Centro e Santa Felicidade',
     'label-vagas': 'Vagas disponíveis',
     'label-value': 'Valor da contribuição',
     'label-obs': 'Observações (opcional)',
@@ -116,6 +118,19 @@ const translations = {
     'register-has-account': 'Já tem uma conta?',
     'register-login-now': 'Fazer login',
     'register-email-hint': 'Apenas e-mails da sua universidade são aceitos',
+    'footer-dev-by': 'Desenvolvido por',
+    'footer-rights': '© 2026 UniCaronas — Todos os direitos reservados.',
+    
+    // Landing Page (index.html)
+    'hero-title': 'Caronas seguras e fáceis para sua universidade',
+    'hero-subtitle': 'Conectando estudantes para uma mobilidade mais inteligente, econômica e sustentável.',
+    'btn-start': 'Começar agora',
+    'feature-1-title': 'Economia',
+    'feature-1-desc': 'Divida os custos da viagem e economize mensalmente.',
+    'feature-2-title': 'Segurança',
+    'feature-2-desc': 'Apenas usuários com e-mail institucional podem participar.',
+    'feature-3-title': 'Sustentabilidade',
+    'feature-3-desc': 'Menos carros nas ruas, menos emissão de CO2.',
   },
   en: {
     // Navbar
@@ -225,6 +240,19 @@ const translations = {
     'btn-register': 'Register',
     'register-has-account': 'Already have an account?',
     'register-login-now': 'Login now',
+    'footer-dev-by': 'Developed by',
+    'footer-rights': '© 2026 UniCaronas — All rights reserved.',
+    
+    // Landing Page (index.html)
+    'hero-title': 'Safe and easy rides for your university',
+    'hero-subtitle': 'Connecting students for smarter, more economical and sustainable mobility.',
+    'btn-start': 'Get started',
+    'feature-1-title': 'Economy',
+    'feature-1-desc': 'Split travel costs and save monthly.',
+    'feature-2-title': 'Security',
+    'feature-2-desc': 'Only users with institutional email can participate.',
+    'feature-3-title': 'Sustainability',
+    'feature-3-desc': 'Fewer cars on the streets, less CO2 emissions.',
   },
   es: {
     // Navbar
@@ -335,8 +363,21 @@ const translations = {
     'register-has-account': '¿Ya tienes una cuenta?',
     'register-login-now': 'Iniciar sesión',
     'register-email-hint': 'Sólo se aceptan correos electrónicos de tu universidad',
-    }
-    };
+    'footer-dev-by': 'Desarrollado por',
+    'footer-rights': '© 2026 UniCaronas — Todos os direitos reservados.',
+    
+    // Landing Page (index.html)
+    'hero-title': 'Viajes seguros y fáciles para tu universidad',
+    'hero-subtitle': 'Conectando estudiantes para una movilidad más inteligente, económica y sostenible.',
+    'btn-start': 'Empezar ahora',
+    'feature-1-title': 'Economía',
+    'feature-1-desc': 'Divide los costes del viaje y ahorra mensualmente.',
+    'feature-2-title': 'Seguridad',
+    'feature-2-desc': 'Sólo pueden participar usuarios con correo institucional.',
+    'feature-3-title': 'Sostenibilidad',
+    'feature-3-desc': 'Menos coches en las calles, menos emisiones de CO2.',
+  }
+};
 
 let currentLang = localStorage.getItem('unicaronas_lang') || 'pt';
 
@@ -373,80 +414,6 @@ function updateLangSelector() {
   if (selector) selector.value = currentLang;
 }
 
-// Inserção automática do seletor na navbar ou em local fixo
-function injectLangSelector() {
-  let parent = document.querySelector('.navbar .container');
-  let isFixed = false;
-  
-  if (!parent) {
-    // Se não houver navbar, cria um container fixo no topo direito
-    parent = document.createElement('div');
-    parent.id = 'lang-selector-fixed';
-    parent.style.position = 'fixed';
-    parent.style.top = '1rem';
-    parent.style.right = '1rem';
-    parent.style.zIndex = '1000';
-    parent.style.display = 'flex';
-    parent.style.background = 'var(--surface)';
-    parent.style.padding = '0.4rem';
-    parent.style.borderRadius = 'var(--radius-sm)';
-    parent.style.border = '1px solid var(--border)';
-    document.body.appendChild(parent);
-    isFixed = true;
-  }
-  
-  // Verifica se já existe
-  if (document.getElementById('lang-selector-container')) return;
-  
-  const container = document.createElement('div');
-  container.id = 'lang-selector-container';
-  container.style.display = 'flex';
-  container.style.alignItems = 'center';
-  container.style.gap = '0.5rem';
-  if (!isFixed) container.style.marginLeft = '1rem';
-  
-  const select = document.createElement('select');
-  select.id = 'lang-selector';
-  select.className = 'form-control';
-  select.style.padding = '0.2rem 0.5rem';
-  select.style.fontSize = '0.75rem';
-  select.style.width = 'auto';
-  select.style.background = 'var(--bg-2)';
-  select.style.border = 'none';
-  select.style.color = 'var(--text)';
-  
-  const options = [
-    { value: 'pt', label: 'PT' },
-    { value: 'en', label: 'EN' },
-    { value: 'es', label: 'ES' }
-  ];
-  
-  options.forEach(opt => {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    select.appendChild(o);
-  });
-  
-  select.value = currentLang;
-  select.addEventListener('change', (e) => setLanguage(e.target.value));
-  
-  container.appendChild(select);
-  
-  if (isFixed) {
-    parent.appendChild(container);
-  } else {
-    // Insere antes do botão de logout se ele existir, ou no final da container
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-      parent.insertBefore(container, btnLogout);
-    } else {
-      parent.appendChild(container);
-    }
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  // injectLangSelector(); // Desativado para usar botões manuais na navbar
   applyTranslations();
 });

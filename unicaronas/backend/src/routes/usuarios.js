@@ -26,6 +26,7 @@ const schemaPerfil = {
 
 router.post('/',        validar(schemasCadastro), ctrl.cadastrar);
 router.post('/login',   validar(schemasLogin),    ctrl.login);
+router.post('/recuperar-senha',                   ctrl.recuperarSenha);
 router.get('/:id',      auth,                     ctrl.buscarPorId);
 router.patch('/perfil', auth, upload.single('foto'), validar(schemaPerfil), ctrl.atualizarPerfil);
 router.delete('/conta', auth,                     ctrl.deletarConta);

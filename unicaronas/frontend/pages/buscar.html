@@ -86,7 +86,7 @@
   <footer class="footer">
     <div class="container footer-content">
       <div class="navbar-brand-img" style="margin-bottom: 1rem;"></div>
-      <div class="footer-dev">Desenvolvido por <a href="#">Ariane Archanjo</a>, <a href="#">Matheus Sizanoski</a>, <a href="#">Pedro Kafka</a> e <a href="#">Rafael Machado</a></div>
+      <div class="footer-dev">Desenvolvido pelas divas: <a href="#">Ariane Archanjo</a>, <a href="#">Matheus Sizanoski</a>, <a href="#">Pedro Kafka</a> e <a href="#">Rafael Machado</a></div>
       <div class="footer-copyright">© 2026 UniCaronas — Todos os direitos reservados.</div>
     </div>
   </footer>
@@ -119,6 +119,12 @@
           <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-2); font-weight: 500; display: flex; align-items: center; gap: 0.4rem;">
             <span style="color: var(--accent); display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Ponto de encontro:</span> ${c.ponto_encontro}
           </div>
+          ${c.itinerario ? `
+            <div style="margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-3); background: var(--surface-2); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); border-left: 2px solid var(--accent);">
+              <span style="font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Itinerário</span>
+              ${c.itinerario}
+            </div>
+          ` : ''}
           <div class="carona-meta" style="margin-top: 0.75rem;">
             <div class="meta-item">
               <span class="meta-label">${t('card-time')}</span>

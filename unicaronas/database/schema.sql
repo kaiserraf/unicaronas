@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS pagamentos CASCADE;
 DROP TABLE IF EXISTS mensagens_chat CASCADE;
 DROP TABLE IF EXISTS solicitacoes_carona CASCADE;
 DROP TABLE IF EXISTS caronas CASCADE;
+DROP TABLE IF EXISTS veiculos CASCADE;
 DROP TABLE IF EXISTS usuarios CASCADE;
 
 -- =============================================================

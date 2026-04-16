@@ -13,7 +13,7 @@ const cadastrar = async (req, res, next) => {
     const { nome, email, matricula, senha, telefone, curso, dia_ead, perfil_tipo, veiculo } = req.body;
 
     // Valida domínio de e-mail institucional
-    const dominiosPermitidos = (process.env.EMAIL_DOMINIOS || '@uni.edu.br')
+    const dominiosPermitidos = (process.env.EMAIL_DOMINIOS || '@unibrasil.com.br')
       .split(',')
       .map((d) => d.trim().toLowerCase());
     const emailNorm = email.toLowerCase();
@@ -69,9 +69,27 @@ const cadastrar = async (req, res, next) => {
       }
 
       await client.query('COMMIT');
+
+      // Gerar token para auto-login
+      const token = jwt.sign(
+        { id: novoUsuario.id, email: novoUsuario.email, nome: novoUsuario.nome, perfil_tipo: novoUsuario.perfil_tipo },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
       res.status(201).json({
         success: true,
-        data: novoUsuario,
+        data: {
+          token,
+          usuario: {
+            id:               novoUsuario.id,
+            nome:             novoUsuario.nome,
+            email:            novoUsuario.email,
+            curso:            novoUsuario.curso,
+            dia_ead:          novoUsuario.dia_ead,
+            perfil_tipo:      novoUsuario.perfil_tipo,
+          }
+        },
         message: 'Usuário cadastrado com sucesso',
       });
     } catch (err) {
@@ -80,6 +98,30 @@ const cadastrar = async (req, res, next) => {
     } finally {
       client.release();
     }
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/usuarios/recuperar-senha
+ * Simulação de recuperação de senha para protótipo.
+ */
+const recuperarSenha = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const { rows } = await db.query('SELECT id FROM usuarios WHERE email = $1', [email.toLowerCase().trim()]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'E-mail não encontrado' });
+    }
+
+    // Em um sistema real, enviaria um e-mail com token.
+    // Aqui apenas retornamos sucesso para o protótipo.
+    res.json({ 
+      success: true, 
+      message: 'Instruções de recuperação enviadas para o seu e-mail institucional.' 
+    });
   } catch (err) {
     next(err);
   }
@@ -260,4 +302,4 @@ const atualizarPerfil = async (req, res, next) => {
   }
 };
 
-module.exports = { cadastrar, login, buscarPorId, atualizarPerfil, deletarConta };
+module.exports = { cadastrar, login, buscarPorId, atualizarPerfil, deletarConta, recuperarSenha };
